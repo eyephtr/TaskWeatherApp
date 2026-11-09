@@ -28,7 +28,15 @@ target 'TaskWeatherApp' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
     )
+
+    # ยก pod ที่ตั้ง deployment target ต่ำกว่า 15.0 ให้เป็น 15.1
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |bc|
+        if bc.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.0
+          bc.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+      end
+    end
   end
 end
