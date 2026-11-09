@@ -1,97 +1,66 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# TaskWeatherApp
 
-# Getting Started
+> สถานะ: 🚧 อยู่ระหว่างพัฒนา (อัปเดตล่าสุด 9 พ.ย. 2569)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 1. วิธีการติดตั้งและรันโปรเจกต์
 
-## Step 1: Start Metro
+### เวอร์ชันที่ใช้
+| เครื่องมือ | เวอร์ชัน |
+|---|---|
+| React Native | 0.88.1 |
+| Node | _(รัน `node -v`)_ |
+| Xcode | _(รัน `xcodebuild -version`)_ |
+| Ruby | _(รัน `ruby -v`)_ |
+| iOS Simulator | iPhone 16 Pro (iOS 18.6) |
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
+### คำสั่ง
+```bash
+git clone https://github.com/eyephtr/TaskWeatherApp.git
+cd TaskWeatherApp
+npm install
 bundle install
+cd ios && bundle exec pod install && cd ..
+npm start          # เทอร์มินัลที่ 1 (Metro)
+npm run ios        # เทอร์มินัลที่ 2
 ```
 
-Then, and every time you update your native dependencies, run:
+### หมายเหตุการตั้งค่า
+- `ios/Podfile` มีโค้ดใน `post_install` ที่ยก deployment target ของ pod ที่ต่ำกว่า iOS 15.0 ให้เป็น 15.1 เนื่องจาก Xcode เวอร์ชันนี้ไม่รองรับ target ต่ำกว่านั้น (พบกับ AsyncStorage)
+- Reanimated 4 ต้องใช้ `react-native-worklets` และต้องใส่ `'react-native-worklets/plugin'` เป็นลำดับสุดท้ายใน `babel.config.js`
+- Weather API: Open-Meteo ไม่ต้องใช้ API Key
 
-```sh
-bundle exec pod install
+## 2. โครงสร้างของโปรเจกต์
+
+```
+src/
+  navigation/   การนำทาง (Tab + Stack)
+  screens/      หน้าจอ (UI เท่านั้น)
+  components/   คอมโพเนนต์ที่ใช้ซ้ำ
+  store/        State และ business logic (Zustand)
+  services/     การเรียก API ภายนอก (Weather) และ cache
+  storage/      ชั้นเข้าถึงข้อมูลถาวร (AsyncStorage wrapper)
+  types/        TypeScript types
+  utils/        ฟังก์ชันช่วยเหลือ (pure functions)
+  theme/        สี/ระยะ/ฟอนต์ และ ThemeProvider (light/dark)
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## 3. เหตุผลในการเลือกใช้เทคโนโลยี
 
-```sh
-# Using npm
-npm run ios
+_(เติมระหว่างทำ ตอนนี้บันทึกไว้เบื้องต้น)_
 
-# OR using Yarn
-yarn ios
-```
+- **React Navigation**: เป็นมาตรฐานของ React Native รองรับทั้ง Tab และ Stack ตามโจทย์
+- **Zustand**: เบา โค้ดน้อย แยก logic ออกจาก UI ได้ง่าย และทดสอบ store ได้โดยไม่ต้อง render
+- **AsyncStorage**: โจทย์ไม่ได้กำหนดชนิดของ storage ข้อมูลเป็น list ขนาดเล็ก ไม่จำเป็นต้องใช้ฐานข้อมูล โดยห่อด้วย wrapper เพื่อสลับไปใช้ตัวอื่นได้ภายหลัง
+- **Open-Meteo**: ไม่ต้องใช้ API Key ลดขั้นตอนการตั้งค่าของผู้ตรวจ
+- **Theme tokens**: รวมสีไว้ที่เดียว ทำให้รองรับ dark mode ได้โดยไม่ต้องแก้ทีละหน้า
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 4. ขอบเขตงานที่ยังไม่แล้วเสร็จและแผนการดำเนินการต่อ
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+_(ส่วนนี้จะอัปเดตทุกวันตลอดการทำงาน)_
 
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+| รายการ | สถานะ | หมายเหตุ / แผนต่อ |
+|---|---|---|
+| ส่วน Task (CRUD, กรอง, ค้นหา, persist) | ยังไม่เริ่ม | |
+| ส่วน Weather (3 สถานะ, cache 10 นาที) | ยังไม่เริ่ม | |
+| Unit test | ยังไม่เริ่ม | |
+| ฟีเจอร์เสริม | ยังไม่เริ่ม | |
