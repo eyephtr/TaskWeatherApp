@@ -3,13 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
-import type { Priority, Task } from '../types/task';
-
-const CARD_COLOR: Record<Priority, string> = {
-    high: palette.petalPink,
-    medium: palette.peachPuff,
-    low: palette.subtlePurple,
-};
+import type { Task } from '../types/task';
+import { PRIORITY_COLOR } from '../theme/priority';
 
 const INK = palette.bistre;
 const INK_MUTED = '#7A6657'; // derived
@@ -65,7 +60,7 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
             <Pressable
                 accessibilityRole="button"
                 onPress={onPress}
-                style={[styles.card, { backgroundColor: CARD_COLOR[task.priority] }]}>
+                style={[styles.card, { backgroundColor: PRIORITY_COLOR[task.priority] }]}>
                 <View style={styles.top}>
                     <Text
                         numberOfLines={2}
