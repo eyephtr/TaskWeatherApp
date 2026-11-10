@@ -3,9 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
-import type { MockPriority, MockTask } from '../mock/mockTasks';
+import type { Priority, Task } from '../types/task';
 
-const CARD_COLOR: Record<MockPriority, string> = {
+const CARD_COLOR: Record<Priority, string> = {
     high: palette.petalPink,
     medium: palette.peachPuff,
     low: palette.subtlePurple,
@@ -46,13 +46,14 @@ function Check({ checked, onPress, label, size = 28 }: CheckProps) {
 }
 
 interface Props {
-    task: MockTask;
+    task: Task;
     done: boolean;
     onToggle: () => void;
+    onToggleSubtask: (subtaskId: string) => void;
     onPress: () => void;
 }
 
-export default function AgendaItem({ task, done, onToggle, onPress }: Props) {
+export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPress }: Props) {
     const { colors } = useTheme();
     const time = task.start.replace(/^0/, ''); // 07:00 -> 7:00
     const range = task.end ? `${task.start} - ${task.end}` : null;
@@ -81,7 +82,7 @@ export default function AgendaItem({ task, done, onToggle, onPress }: Props) {
 
                 {task.subtasks?.map(s => (
                     <View key={s.id} style={styles.subtask}>
-                        <Check checked={!!s.done} onPress={() => { }} label={s.title} size={22} />
+                        <Check checked={s.done} onPress={() => onToggleSubtask(s.id)} label={s.title} size={22} />
                         <Text style={[styles.subtaskText, s.done && styles.titleDone]}>{s.title}</Text>
                     </View>
                 ))}

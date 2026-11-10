@@ -19,7 +19,8 @@ import AgendaItem from '../components/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/WeekStrip';
 import IconSegmentedControl, { type SegmentOption } from '../components/IconSegmentedControl';
 import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
-import { buildMockTasks, type MockTask } from '../mock/mockTasks';
+import { useTaskStore } from '../store/useTaskStore';
+import { groupByDate } from '../utils/taskSelectors';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
 
 type CalendarProps = React.ComponentProps<typeof CalendarList>;
@@ -46,12 +47,11 @@ export default function TaskListScreen() {
 
     const [calendarStart, setCalendarStart] = useState(today);
     const [visibleMonth, setVisibleMonth] = useState(() => monthStartOf(today));
-    const tasksByDate = useMemo(buildMockTasks, []);
 
-    const [doneOverrides, setDoneOverrides] = useState<Record<string, boolean>>({});
-    const isDone = (t: MockTask) => doneOverrides[t.id] ?? !!t.done;
-    const toggleDone = (t: MockTask) =>
-        setDoneOverrides(prev => ({ ...prev, [t.id]: !(prev[t.id] ?? !!t.done) }));
+    const allTasks = useTaskStore(s => s.tasks);
+    const toggleDone = useTaskStore(s => s.toggleDone);
+    const toggleSubtask = useTaskStore(s => s.toggleSubtask);
+    const tasksByDate = useMemo(() => groupByDate(allTasks), [allTasks]);
 
     useEffect(() => {
         setVisibleMonth(monthStartOf(calendarStart));
@@ -117,7 +117,7 @@ export default function TaskListScreen() {
         () => [...(tasksByDate[selected] ?? [])].sort((a, b) => a.start.localeCompare(b.start)),
         [tasksByDate, selected],
     );
-    const doneCount = tasks.filter(isDone).length;
+    const doneCount = tasks.filter(t => t.done).length;
     const title = selected === today ? "Today's Tasks" : formatDate(selected);
     const subtitle = tasks.length
         ? `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} · ${doneCount} done`
@@ -178,8 +178,9 @@ export default function TaskListScreen() {
                             <AgendaItem
                                 key={t.id}
                                 task={t}
-                                done={isDone(t)}
-                                onToggle={() => toggleDone(t)}
+                                done={t.done}
+                                onToggle={() => toggleDone(t.id)}
+                                onToggleSubtask={subtaskId => toggleSubtask(t.id, subtaskId)}
                                 onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
                             />
                         ))
