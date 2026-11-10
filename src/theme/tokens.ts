@@ -1,4 +1,6 @@
 export const palette = {
+    white: '#FFFFFF',
+    
     peachPuff: '#FFDAB9',
     petalPink: '#FFD1DC',
     matteCoral: '#E2725B',
@@ -7,6 +9,9 @@ export const palette = {
     linenCream: '#F4EBD9',
     laurelGreen: '#A8BB9A',
     subtlePurple: '#D5D0E0',
+
+    mutedOffWhite: '#FBF6EC',
+    armyBrown: '#5A4030',
 } as const;
 
 export interface ThemeColors {
@@ -30,11 +35,12 @@ export interface ThemeColors {
     priorityHigh: string;
     priorityMedium: string;
     priorityLow: string;
+    ring: string;
 }
 
 export const lightColors: ThemeColors = {
-    background: palette.linenCream,
-    surface: '#FBF6EC', // derived
+    background: palette.raelynn,
+    surface: palette.mutedOffWhite,
     surfaceAlt: palette.peachPuff,
     text: palette.bistre,
     textMuted: '#7A6657', // derived
@@ -46,13 +52,14 @@ export const lightColors: ThemeColors = {
     warning: palette.raelynn,
     onWarning: palette.bistre,
     danger: '#B5402B', // derived
-    onDanger: '#FFFFFF',
+    onDanger: palette.white,
     weatherCard: palette.subtlePurple,
     onWeatherCard: palette.bistre,
-    accentSoft: palette.petalPink,
+    accentSoft: palette.armyBrown,
     priorityHigh: palette.matteCoral,
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
+    ring: palette.bistre,
 };
 
 export const darkColors: ThemeColors = {
@@ -76,6 +83,7 @@ export const darkColors: ThemeColors = {
     priorityHigh: palette.matteCoral,
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
+    ring: palette.raelynn,
 };
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
