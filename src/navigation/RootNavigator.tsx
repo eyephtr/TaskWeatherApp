@@ -6,7 +6,6 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import TaskListScreen from '../screens/TaskListScreen';
-import AgendaScreen from '../screens/AgendaScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
@@ -25,9 +24,6 @@ interface TabIconProps {
 const TasksIcon = ({ focused, color, size }: TabIconProps) => (
     <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={size} color={color} />
 );
-const AgendaIcon = ({ focused, color, size }: TabIconProps) => (
-    <Ionicons name={focused ? 'list' : 'list-outline'} size={size} color={color} />
-);
 const WeatherIcon = ({ focused, color, size }: TabIconProps) => (
     <Ionicons name={focused ? 'partly-sunny' : 'partly-sunny-outline'} size={size} color={color} />
 );
@@ -44,11 +40,6 @@ function Tabs() {
                 name="Tasks"
                 component={TaskListScreen}
                 options={{ headerShown: false, title: 'Tasks', tabBarIcon: TasksIcon }}
-            />
-            <Tab.Screen
-                name="Agenda"
-                component={AgendaScreen}
-                options={{ headerShown: false, title: 'Agenda', tabBarIcon: AgendaIcon }}
             />
             <Tab.Screen
                 name="Weather"

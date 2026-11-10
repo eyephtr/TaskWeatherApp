@@ -5,11 +5,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
-export const TAB_BAR_CLEARANCE = 100;
+export const TAB_BAR_CLEARANCE = 105;
+
+const BAR_HEIGHT = 64;
+const PLUS_SIZE = 20;
+const PLUS_THICKNESS = 3;
 
 export default function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
+
+    const handleAddTask = () => {
+        // TODO: เปิดฟอร์มเพิ่มงาน เช่น navigation.getParent()?.navigate('TaskForm')
+    };
 
     return (
         <View
@@ -54,29 +62,72 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                     );
                 })}
             </View>
+
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add task"
+                onPress={handleAddTask}
+                style={[styles.fab, { backgroundColor: colors.primary }]}>
+                <View style={styles.plus}>
+                    <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
+                    <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
+                </View>
+            </Pressable>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    wrap: { position: 'absolute', left: spacing.lg, right: spacing.lg },
-    bar: {
+    wrap: {
+        position: 'absolute',
+        left: spacing.lg,
+        right: spacing.lg,
         flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    bar: {
+        flex: 1,
+        flexDirection: 'row',
+        height: BAR_HEIGHT,
         padding: spacing.xs + 2,
         borderRadius: radius.pill,
         borderWidth: StyleSheet.hairlineWidth,
         shadowColor: palette.bistre,
         shadowOpacity: 0.18,
+        shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
         elevation: 8,
     },
     pressable: { flex: 1 },
     item: {
+        flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 2,
-        paddingVertical: spacing.sm,
         borderRadius: radius.pill,
     },
     label: { fontSize: fontSize.caption - 1 },
     labelActive: { fontWeight: '700' },
+    fab: {
+        width: BAR_HEIGHT,
+        height: BAR_HEIGHT,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: palette.bistre,
+        shadowOpacity: 0.18,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 8,
+    },
+    plus: {
+        width: PLUS_SIZE,
+        height: PLUS_SIZE,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    plusBar: { position: 'absolute', borderRadius: PLUS_THICKNESS / 2 },
+    plusHorizontal: { width: PLUS_SIZE, height: PLUS_THICKNESS },
+    plusVertical: { width: PLUS_THICKNESS, height: PLUS_SIZE },
 });
