@@ -5,6 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types/navigation';
+
 export const TAB_BAR_CLEARANCE = 105;
 
 const BAR_HEIGHT = 64;
@@ -15,8 +19,10 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
 
+    const stackNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
     const handleAddTask = () => {
-        // TODO: เปิดฟอร์มเพิ่มงาน เช่น navigation.getParent()?.navigate('TaskForm')
+        stackNavigation.navigate('TaskForm');
     };
 
     return (

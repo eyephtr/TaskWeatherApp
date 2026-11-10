@@ -10,4 +10,5 @@ export type TabParamList = {
 export type RootStackParamList = {
     Tabs: NavigatorScreenParams<TabParamList>;
     TaskDetail: { taskId: string };
+    TaskForm: { taskId?: string; date?: string } | undefined;
 };

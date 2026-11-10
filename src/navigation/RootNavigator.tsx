@@ -11,6 +11,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 import FloatingTabBar from '../components/FloatingTabBar';
+import TaskFormScreen from '../screens/TaskFormScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +64,14 @@ export default function RootNavigator() {
                 name="TaskDetail"
                 component={TaskDetailScreen}
                 options={{ title: 'Task Details' }}
+            />
+            <Stack.Screen
+                name="TaskForm"
+                component={TaskFormScreen}
+                options={({ route }) => ({
+                    presentation: 'modal',
+                    title: route.params?.taskId ? 'Edit Task' : 'New Task',
+                })}
             />
         </Stack.Navigator>
     );
