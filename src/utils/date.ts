@@ -20,3 +20,21 @@ export function formatDate(dateString: string): string {
 export function monthStartOf(dateString: string): string {
     return `${dateString.slice(0, 7)}-01`;
 }
+
+export function addDays(dateString: string, n: number): string {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return toDateString(new Date(y, m - 1, d + n));
+}
+
+export function diffDays(a: string, b: string): number {
+    const utc = (s: string) => {
+        const [y, m, d] = s.split('-').map(Number);
+        return Date.UTC(y, m - 1, d);
+    };
+    return Math.round((utc(b) - utc(a)) / 86400000);
+}
+
+export function startOfWeek(dateString: string): string {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return addDays(dateString, -new Date(y, m - 1, d).getDay());
+}

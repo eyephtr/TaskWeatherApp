@@ -1,23 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+    LayoutAnimation,
+    ScrollView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
+} from 'react-native';
 import { CalendarList, type DateData } from 'react-native-calendars';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
+import { fontSize, spacing } from '../theme/tokens';
 import NotebookCard from '../components/NotebookCard';
 import AgendaItem from '../components/AgendaItem';
+import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/WeekStrip';
+import IconSegmentedControl, { type SegmentOption } from '../components/IconSegmentedControl';
 import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
 import { buildMockTasks, type MockTask } from '../mock/mockTasks';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
 
 type CalendarProps = React.ComponentProps<typeof CalendarList>;
+type ViewMode = 'list' | 'calendar';
 
 const CALENDAR_HEIGHT = 262;
-const PLUS_THICKNESS = 3;
-const PLUS_SIZE = 20;
+
+const VIEW_OPTIONS: readonly SegmentOption<ViewMode>[] = [
+    { key: 'list', icon: 'list-outline', label: 'List view' },
+    { key: 'calendar', icon: 'calendar-outline', label: 'Calendar view' },
+];
 
 const renderNoHeader = () => null;
 
@@ -28,7 +41,10 @@ export default function TaskListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const today = useMemo(() => toDateString(new Date()), []);
+    const [mode, setMode] = useState<ViewMode>('calendar');
     const [selected, setSelected] = useState(today);
+
+    const [calendarStart, setCalendarStart] = useState(today);
     const [visibleMonth, setVisibleMonth] = useState(() => monthStartOf(today));
     const tasksByDate = useMemo(buildMockTasks, []);
 
@@ -38,30 +54,48 @@ export default function TaskListScreen() {
         setDoneOverrides(prev => ({ ...prev, [t.id]: !(prev[t.id] ?? !!t.done) }));
 
     useEffect(() => {
-        setVisibleMonth(monthStartOf(today));
-    }, [isDark, today]);
+        setVisibleMonth(monthStartOf(calendarStart));
+    }, [isDark, calendarStart]);
 
-    const [visibleYear, visibleMonthNumber] = visibleMonth.split('-').map(Number);
+    const handleModeChange = (next: ViewMode) => {
+        if (next === mode) {
+            return;
+        }
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (next === 'calendar') {
+            setCalendarStart(selected);
+        }
+        setMode(next);
+    };
+
+    // โหมดรายการ: เดือนตามวันที่เลือก / โหมดปฏิทิน: เดือนที่กำลังเลื่อนดู
+    const headerMonth = mode === 'list' ? monthStartOf(selected) : visibleMonth;
+    const [headerYear, headerMonthNumber] = headerMonth.split('-').map(Number);
+
+    // สีจุดตามความสำคัญของงานในแต่ละวัน (ใช้ทั้งปฏิทินรายเดือนและแถบสัปดาห์)
+    const dotsByDate = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        Object.entries(tasksByDate).forEach(([date, list]) => {
+            const priorities = Array.from(new Set(list.map(t => t.priority))).slice(0, 3);
+            map[date] = priorities.map(p =>
+                p === 'high'
+                    ? colors.priorityHigh
+                    : p === 'medium'
+                        ? colors.priorityMedium
+                        : colors.priorityLow,
+            );
+        });
+        return map;
+    }, [tasksByDate, colors]);
 
     const markedDates = useMemo(() => {
         const marks: NonNullable<CalendarProps['markedDates']> = {};
-        Object.entries(tasksByDate).forEach(([date, list]) => {
-            const priorities = Array.from(new Set(list.map(t => t.priority))).slice(0, 3);
-            marks[date] = {
-                dots: priorities.map(p => ({
-                    key: p,
-                    color:
-                        p === 'high'
-                            ? colors.priorityHigh
-                            : p === 'medium'
-                                ? colors.priorityMedium
-                                : colors.priorityLow,
-                })),
-            };
+        Object.entries(dotsByDate).forEach(([date, dotColors]) => {
+            marks[date] = { dots: dotColors.map((color, i) => ({ key: `${date}-${i}`, color })) };
         });
         marks[selected] = { ...marks[selected], selected: true };
         return marks;
-    }, [tasksByDate, selected, colors]);
+    }, [dotsByDate, selected]);
 
     const calendarTheme = useMemo<CalendarProps['theme']>(
         () => ({
@@ -89,50 +123,47 @@ export default function TaskListScreen() {
         ? `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} · ${doneCount} done`
         : 'Nothing planned';
 
-    const handleAddTask = () => {
-        // TODO: เปิดฟอร์มเพิ่มงาน (modal) ตอนทำส่วน data layer
-    };
-
     return (
         <View style={[styles.root, { backgroundColor: colors.background }]}>
             <View style={[styles.headerRow, { paddingTop: insets.top + spacing.md }]}>
                 <View>
                     <Text style={[styles.monthText, { color: colors.text }]}>
-                        {monthNames[visibleMonthNumber - 1]}
+                        {monthNames[headerMonthNumber - 1]}
                     </Text>
-                    <Text style={[styles.yearText, { color: colors.textMuted }]}>{visibleYear}</Text>
+                    <Text style={[styles.yearText, { color: colors.textMuted }]}>{headerYear}</Text>
                 </View>
 
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Add task"
-                    onPress={handleAddTask}
-                    style={[styles.fab, { backgroundColor: colors.primary }]}>
-                    <View style={styles.plus}>
-                        <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
-                        <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
-                    </View>
-                </Pressable>
+                <IconSegmentedControl options={VIEW_OPTIONS} value={mode} onChange={handleModeChange} />
             </View>
 
-            <CalendarList
-                key={isDark ? 'dark' : 'light'}
-                horizontal
-                pagingEnabled
-                calendarWidth={width}
-                calendarHeight={CALENDAR_HEIGHT}
-                calendarStyle={styles.calendarPage}
-                pastScrollRange={24}
-                futureScrollRange={24}
-                current={today}
-                onMonthChange={(m: DateData) => setVisibleMonth(monthStartOf(m.dateString))}
-                renderHeader={renderNoHeader}
-                markingType="multi-dot"
-                markedDates={markedDates}
-                theme={calendarTheme}
-                firstDay={0}
-                onDayPress={(day: DateData) => setSelected(day.dateString)}
-            />
+            <View
+                style={[
+                    styles.calendarArea,
+                    { height: mode === 'calendar' ? CALENDAR_HEIGHT : WEEK_STRIP_HEIGHT },
+                ]}>
+                {mode === 'calendar' ? (
+                    <CalendarList
+                        key={isDark ? 'dark' : 'light'}
+                        horizontal
+                        pagingEnabled
+                        calendarWidth={width}
+                        calendarHeight={CALENDAR_HEIGHT}
+                        calendarStyle={styles.calendarPage}
+                        pastScrollRange={24}
+                        futureScrollRange={24}
+                        current={calendarStart}
+                        onMonthChange={(m: DateData) => setVisibleMonth(monthStartOf(m.dateString))}
+                        renderHeader={renderNoHeader}
+                        markingType="multi-dot"
+                        markedDates={markedDates}
+                        theme={calendarTheme}
+                        firstDay={0}
+                        onDayPress={(day: DateData) => setSelected(day.dateString)}
+                    />
+                ) : (
+                    <WeekStrip selected={selected} today={today} dots={dotsByDate} onSelect={setSelected} />
+                )}
+            </View>
 
             <NotebookCard title={title} subtitle={subtitle} style={styles.note}>
                 <ScrollView
@@ -170,22 +201,7 @@ const styles = StyleSheet.create({
     },
     monthText: { fontSize: fontSize.display - 4, fontWeight: '700' },
     yearText: { fontSize: fontSize.body, marginTop: -2 },
-    fab: {
-        width: 45,
-        height: 45,
-        borderRadius: radius.pill,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    plus: {
-        width: PLUS_SIZE,
-        height: PLUS_SIZE,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    plusBar: { position: 'absolute', borderRadius: PLUS_THICKNESS / 2 },
-    plusHorizontal: { width: PLUS_SIZE, height: PLUS_THICKNESS },
-    plusVertical: { width: PLUS_THICKNESS, height: PLUS_SIZE },
+    calendarArea: { overflow: 'hidden' },
     calendarPage: { paddingHorizontal: spacing.sm },
     note: { flex: 1, marginHorizontal: spacing.lg, marginBottom: TAB_BAR_CLEARANCE },
     empty: { textAlign: 'center', paddingVertical: spacing.xl, fontSize: fontSize.body },
