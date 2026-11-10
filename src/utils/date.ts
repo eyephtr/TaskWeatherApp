@@ -16,3 +16,7 @@ export function formatDate(dateString: string): string {
     const weekday = dayNames[new Date(y, m - 1, d).getDay()];
     return `${weekday}, ${d} ${monthNames[m - 1]}`;
 }
+
+export function monthStartOf(dateString: string): string {
+    return `${dateString.slice(0, 7)}-01`;
+}

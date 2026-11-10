@@ -1,34 +1,47 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Calendar, type DateData } from 'react-native-calendars';
-import { Ionicons } from '@react-native-vector-icons/ionicons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { CalendarList, type DateData } from 'react-native-calendars';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import NotebookCard from '../components/NotebookCard';
+import AgendaItem from '../components/AgendaItem';
 import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
-import { buildMockTasks } from '../mock/mockTasks';
-import { formatDate, toDateString } from '../utils/date';
+import { buildMockTasks, type MockTask } from '../mock/mockTasks';
+import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
 
-type CalendarProps = React.ComponentProps<typeof Calendar>;
+type CalendarProps = React.ComponentProps<typeof CalendarList>;
+
+const CALENDAR_HEIGHT = 262;
+const PLUS_THICKNESS = 3;
+const PLUS_SIZE = 20;
+
+const renderNoHeader = () => null;
 
 export default function TaskListScreen() {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
+    const { width } = useWindowDimensions();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const today = useMemo(() => toDateString(new Date()), []);
     const [selected, setSelected] = useState(today);
+    const [visibleMonth, setVisibleMonth] = useState(() => monthStartOf(today));
     const tasksByDate = useMemo(buildMockTasks, []);
 
-    const priorityColor = {
-        high: colors.priorityHigh,
-        medium: colors.priorityMedium,
-        low: colors.priorityLow,
-    };
+    const [doneOverrides, setDoneOverrides] = useState<Record<string, boolean>>({});
+    const isDone = (t: MockTask) => doneOverrides[t.id] ?? !!t.done;
+    const toggleDone = (t: MockTask) =>
+        setDoneOverrides(prev => ({ ...prev, [t.id]: !(prev[t.id] ?? !!t.done) }));
+
+    useEffect(() => {
+        setVisibleMonth(monthStartOf(today));
+    }, [isDark, today]);
+
+    const [visibleYear, visibleMonthNumber] = visibleMonth.split('-').map(Number);
 
     const markedDates = useMemo(() => {
         const marks: NonNullable<CalendarProps['markedDates']> = {};
@@ -41,8 +54,8 @@ export default function TaskListScreen() {
                         p === 'high'
                             ? colors.priorityHigh
                             : p === 'medium'
-                              ? colors.priorityMedium
-                              : colors.priorityLow,
+                                ? colors.priorityMedium
+                                : colors.priorityLow,
                 })),
             };
         });
@@ -59,40 +72,67 @@ export default function TaskListScreen() {
             todayTextColor: colors.primary,
             selectedDayBackgroundColor: colors.text,
             selectedDayTextColor: colors.background,
-            monthTextColor: colors.text,
-            arrowColor: colors.text,
-            textMonthFontWeight: '700',
             textDayFontWeight: '500',
             textDayHeaderFontWeight: '500',
+            weekVerticalMargin: 2,
         }),
         [colors],
     );
 
-    const tasks = tasksByDate[selected] ?? [];
-    const doneCount = tasks.filter(t => t.done).length;
+    const tasks = useMemo(
+        () => [...(tasksByDate[selected] ?? [])].sort((a, b) => a.start.localeCompare(b.start)),
+        [tasksByDate, selected],
+    );
+    const doneCount = tasks.filter(isDone).length;
     const title = selected === today ? "Today's Tasks" : formatDate(selected);
     const subtitle = tasks.length
         ? `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} · ${doneCount} done`
         : 'Nothing planned';
 
+    const handleAddTask = () => {
+        // TODO: เปิดฟอร์มเพิ่มงาน (modal) ตอนทำส่วน data layer
+    };
+
     return (
         <View style={[styles.root, { backgroundColor: colors.background }]}>
-            <View style={{ paddingTop: insets.top + spacing.sm, paddingHorizontal: spacing.lg }}>
-                <Text style={[styles.heading, { color: colors.text }]}>My Tasks</Text>
+            <View style={[styles.headerRow, { paddingTop: insets.top + spacing.md }]}>
+                <View>
+                    <Text style={[styles.monthText, { color: colors.text }]}>
+                        {monthNames[visibleMonthNumber - 1]}
+                    </Text>
+                    <Text style={[styles.yearText, { color: colors.textMuted }]}>{visibleYear}</Text>
+                </View>
+
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Add task"
+                    onPress={handleAddTask}
+                    style={[styles.fab, { backgroundColor: colors.primary }]}>
+                    <View style={styles.plus}>
+                        <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
+                        <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
+                    </View>
+                </Pressable>
             </View>
 
-            <View style={styles.calendarWrap}>
-                <Calendar
-                    key={isDark ? 'dark' : 'light'}
-                    markingType="multi-dot"
-                    markedDates={markedDates}
-                    theme={calendarTheme}
-                    firstDay={0}
-                    hideExtraDays
-                    enableSwipeMonths
-                    onDayPress={(day: DateData) => setSelected(day.dateString)}
-                />
-            </View>
+            <CalendarList
+                key={isDark ? 'dark' : 'light'}
+                horizontal
+                pagingEnabled
+                calendarWidth={width}
+                calendarHeight={CALENDAR_HEIGHT}
+                calendarStyle={styles.calendarPage}
+                pastScrollRange={24}
+                futureScrollRange={24}
+                current={today}
+                onMonthChange={(m: DateData) => setVisibleMonth(monthStartOf(m.dateString))}
+                renderHeader={renderNoHeader}
+                markingType="multi-dot"
+                markedDates={markedDates}
+                theme={calendarTheme}
+                firstDay={0}
+                onDayPress={(day: DateData) => setSelected(day.dateString)}
+            />
 
             <NotebookCard title={title} subtitle={subtitle} style={styles.note}>
                 <ScrollView
@@ -104,29 +144,13 @@ export default function TaskListScreen() {
                         </Text>
                     ) : (
                         tasks.map(t => (
-                            <Pressable
+                            <AgendaItem
                                 key={t.id}
-                                accessibilityRole="button"
+                                task={t}
+                                done={isDone(t)}
+                                onToggle={() => toggleDone(t)}
                                 onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
-                                style={[styles.row, { borderBottomColor: colors.border }]}>
-                                <View style={[styles.iconWrap, { backgroundColor: colors.background }]}>
-                                    <Ionicons
-                                        name={t.icon}
-                                        size={20}
-                                        color={t.done ? colors.textMuted : colors.text}
-                                    />
-                                </View>
-                                <Text
-                                    numberOfLines={2}
-                                    style={[
-                                        styles.rowTitle,
-                                        { color: t.done ? colors.textMuted : colors.text },
-                                        t.done && styles.done,
-                                    ]}>
-                                    {t.title}
-                                </Text>
-                                <View style={[styles.dot, { backgroundColor: priorityColor[t.priority] }]} />
-                            </Pressable>
+                            />
                         ))
                     )}
                 </ScrollView>
@@ -137,25 +161,32 @@ export default function TaskListScreen() {
 
 const styles = StyleSheet.create({
     root: { flex: 1 },
-    heading: { fontSize: fontSize.title, fontWeight: '700' },
-    calendarWrap: { paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
-    note: { flex: 1, marginHorizontal: spacing.lg, marginBottom: TAB_BAR_CLEARANCE },
-    row: {
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        paddingVertical: spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.sm,
     },
-    iconWrap: {
-        width: 36,
-        height: 36,
+    monthText: { fontSize: fontSize.display - 4, fontWeight: '700' },
+    yearText: { fontSize: fontSize.body, marginTop: -2 },
+    fab: {
+        width: 45,
+        height: 45,
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    rowTitle: { flex: 1, fontSize: fontSize.body, fontWeight: '600' },
-    done: { textDecorationLine: 'line-through' },
-    dot: { width: 10, height: 10, borderRadius: radius.pill },
+    plus: {
+        width: PLUS_SIZE,
+        height: PLUS_SIZE,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    plusBar: { position: 'absolute', borderRadius: PLUS_THICKNESS / 2 },
+    plusHorizontal: { width: PLUS_SIZE, height: PLUS_THICKNESS },
+    plusVertical: { width: PLUS_THICKNESS, height: PLUS_SIZE },
+    calendarPage: { paddingHorizontal: spacing.sm },
+    note: { flex: 1, marginHorizontal: spacing.lg, marginBottom: TAB_BAR_CLEARANCE },
     empty: { textAlign: 'center', paddingVertical: spacing.xl, fontSize: fontSize.body },
 });
