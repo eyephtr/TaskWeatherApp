@@ -1,27 +1,46 @@
 import React from 'react';
-import { Text } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+    createBottomTabNavigator,
+    type BottomTabBarProps,
+} from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import TaskListScreen from '../screens/TaskListScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
+import FloatingTabBar from '../components/FloatingTabBar';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+interface TabIconProps {
+    focused: boolean;
+    color: string;
+    size: number;
+}
+
+const TasksIcon = ({ focused, color, size }: TabIconProps) => (
+    <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={size} color={color} />
+);
+const WeatherIcon = ({ focused, color, size }: TabIconProps) => (
+    <Ionicons name={focused ? 'partly-sunny' : 'partly-sunny-outline'} size={size} color={color} />
+);
+
+const renderTabBar = (props: BottomTabBarProps) => <FloatingTabBar {...props} />;
+
 function Tabs() {
     return (
-        <Tab.Navigator>
+        <Tab.Navigator tabBar={renderTabBar}>
             <Tab.Screen
                 name="Tasks"
                 component={TaskListScreen}
-                options={{ title: 'งานของฉัน', tabBarIcon: () => <Text>📝</Text> }}
+                options={{ headerShown: false, title: 'Tasks', tabBarIcon: TasksIcon }}
             />
             <Tab.Screen
                 name="Weather"
                 component={WeatherScreen}
-                options={{ title: 'สภาพอากาศ', tabBarIcon: () => <Text>⛅</Text> }}
+                options={{ title: 'Weather', tabBarIcon: WeatherIcon }}
             />
         </Tab.Navigator>
     );
@@ -34,7 +53,7 @@ export default function RootNavigator() {
             <Stack.Screen
                 name="TaskDetail"
                 component={TaskDetailScreen}
-                options={{ title: 'รายละเอียด' }}
+                options={{ title: 'Task Details' }}
             />
         </Stack.Navigator>
     );
