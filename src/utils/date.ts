@@ -38,3 +38,27 @@ export function startOfWeek(dateString: string): string {
     const [y, m, d] = dateString.split('-').map(Number);
     return addDays(dateString, -new Date(y, m - 1, d).getDay());
 }
+
+export function fromDateString(dateString: string): Date {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function toTimeString(d: Date): string {
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function fromTimeString(time: string): Date {
+    const [h, min] = time.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, min, 0, 0);
+    return d;
+}
+
+export function addMinutes(time: string, minutes: number): string {
+    const [h, m] = time.split(':').map(Number);
+    const total = Math.max(0, Math.min(h * 60 + m + minutes, 23 * 60 + 59));
+    return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+}
