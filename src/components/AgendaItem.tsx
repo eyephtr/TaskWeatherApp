@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@react-native-vector-icons/ionicons';
+import Check from './Check';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import type { Task } from '../types/task';
@@ -9,36 +9,6 @@ import { PRIORITY_COLOR } from '../theme/priority';
 const INK = palette.bistre;
 const INK_MUTED = '#7A6657'; // derived
 const CHIP_BG = `${palette.white}99`;
-
-interface CheckProps {
-    checked: boolean;
-    onPress: () => void;
-    label: string;
-    size?: number;
-}
-
-function Check({ checked, onPress, label, size = 28 }: CheckProps) {
-    const { colors } = useTheme();
-    return (
-        <Pressable
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
-            accessibilityLabel={label}
-            hitSlop={8}
-            onPress={onPress}
-            style={[
-                styles.check,
-                { width: size, height: size, borderRadius: size / 2 },
-                checked
-                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                    : { backgroundColor: palette.white, borderColor: palette.white },
-            ]}>
-            {checked ? (
-                <Ionicons name="checkmark" size={size * 0.6} color={palette.linenCream} />
-            ) : null}
-        </Pressable>
-    );
-}
 
 interface Props {
     task: Task;
@@ -106,7 +76,6 @@ const styles = StyleSheet.create({
         backgroundColor: CHIP_BG,
     },
     chipText: { fontSize: fontSize.caption, color: INK_MUTED },
-    check: { borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     range: { fontSize: fontSize.caption + 1, color: INK_MUTED },
     subtask: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
     subtaskText: { flex: 1, fontSize: fontSize.body - 2, color: INK },
