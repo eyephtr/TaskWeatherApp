@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
+
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, radius, spacing } from '../theme/tokens';
-import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 

@@ -5,12 +5,15 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+
+import type { RootStackParamList, TabParamList } from '../types/navigation';
+
+import FloatingTabBar from '../components/FloatingTabBar';
+
 import TaskListScreen from '../screens/TaskListScreen';
 import WeatherScreen from '../screens/WeatherScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TaskDetailScreen from '../screens/TaskDetailScreen';
-import type { RootStackParamList, TabParamList } from '../types/navigation';
-import FloatingTabBar from '../components/FloatingTabBar';
 import TaskFormScreen from '../screens/TaskFormScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();

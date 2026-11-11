@@ -13,9 +13,14 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import type { RootStackParamList } from '../types/navigation';
+
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, radius, spacing } from '../theme/tokens';
+
+import { useTaskStore } from '../store/useTaskStore';
+
 import NotebookCard from '../components/NotebookCard';
 import AgendaItem from '../components/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/WeekStrip';
@@ -24,7 +29,7 @@ import SearchBar from '../components/SearchBar';
 import StatusFilter from '../components/StatusFilter';
 import EmptyState from '../components/EmptyState';
 import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
-import { useTaskStore } from '../store/useTaskStore';
+
 import { groupByDate, sortByDateTime, sortByStart } from '../utils/taskSelectors';
 import { filterTasks, type StatusFilter as Status } from '../utils/taskFilters';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';

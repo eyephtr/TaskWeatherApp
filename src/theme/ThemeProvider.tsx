@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
+
 import { darkColors, lightColors, type ThemeColors } from './tokens';
 
 interface Theme {

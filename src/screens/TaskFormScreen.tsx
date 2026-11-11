@@ -11,19 +11,17 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 import type { RootStackParamList } from '../types/navigation';
 import type { Priority, SubtaskInput, TaskInput, ValidationErrors } from '../types/task';
+
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import { PRIORITIES, PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
+
 import { useTaskStore } from '../store/useTaskStore';
-import {
-    addMinutes,
-    fromDateString,
-    fromTimeString,
-    toDateString,
-    toTimeString,
-} from '../utils/date';
+
+import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../utils/taskValidation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskForm'>;

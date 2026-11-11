@@ -9,8 +9,10 @@ import {
     type NativeScrollEvent,
     type NativeSyntheticEvent,
 } from 'react-native';
+
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, radius, spacing } from '../theme/tokens';
+
 import { addDays, dayNames, diffDays, startOfWeek } from '../utils/date';
 
 export const WEEK_STRIP_HEIGHT = 84;
