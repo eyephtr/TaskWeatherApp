@@ -8,6 +8,7 @@ import {
     startOfWeek,
     toDateString,
     toTimeString,
+    weekdayShort,
 } from '../src/utils/date';
 
 describe('date utils', () => {
@@ -49,5 +50,10 @@ describe('date utils', () => {
         expect(addMinutes('09:00', 60)).toBe('10:00');
         expect(addMinutes('23:30', 60)).toBe('23:59');
         expect(addMinutes('00:10', -30)).toBe('00:00');
+    });
+
+    it('returns short weekday names', () => {
+        expect(weekdayShort('2026-11-11')).toBe('Wed');
+        expect(weekdayShort('2026-11-08')).toBe('Sun');
     });
 });

@@ -62,3 +62,7 @@ export function addMinutes(time: string, minutes: number): string {
     const total = Math.max(0, Math.min(h * 60 + m + minutes, 23 * 60 + 59));
     return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
 }
+
+export function weekdayShort(dateString: string): string {
+    return dayNames[fromDateString(dateString).getDay()].slice(0, 3);
+}
