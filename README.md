@@ -1,66 +1,146 @@
 # TaskWeatherApp
 
-> สถานะ: 🚧 อยู่ระหว่างพัฒนา (อัปเดตล่าสุด 9 พ.ย. 2569)
+แอปพลิเคชัน React Native สำหรับจัดการงาน (Task) พร้อมแสดงพยากรณ์อากาศ
 
-## 1. วิธีการติดตั้งและรันโปรเจกต์
+---
 
-### เวอร์ชันที่ใช้
+## 1. การติดตั้งและรันโปรเจกต์
+
+### เวอร์ชันของเครื่องมือที่ใช้
+
 | เครื่องมือ | เวอร์ชัน |
 |---|---|
+| Node.js | >= 22.11.0 |
 | React Native | 0.88.1 |
-| Node | _(รัน `node -v`)_ |
-| Xcode | _(รัน `xcodebuild -version`)_ |
-| Ruby | _(รัน `ruby -v`)_ |
-| iOS Simulator | iPhone 16 Pro (iOS 18.6) |
+| React | 19.3.0 |
+| TypeScript | ^6.0.3 |
+| Ruby (สำหรับ iOS CocoaPods) | >= 2.7 |
+| Xcode | >= 15 (iOS) |
+| Android Studio / JDK | >= JDK 17 (Android) |
 
-### คำสั่ง
+### ขั้นตอนการติดตั้ง
+
 ```bash
-git clone https://github.com/eyephtr/TaskWeatherApp.git
-cd TaskWeatherApp
+# 1. ติดตั้ง dependencies
 npm install
-bundle install
+
+# 2. ติดตั้ง iOS Pods (macOS เท่านั้น)
 cd ios && bundle exec pod install && cd ..
-npm start          # เทอร์มินัลที่ 1 (Metro)
-npm run ios        # เทอร์มินัลที่ 2
 ```
 
-### หมายเหตุการตั้งค่า
-- `ios/Podfile` มีโค้ดใน `post_install` ที่ยก deployment target ของ pod ที่ต่ำกว่า iOS 15.0 ให้เป็น 15.1 เนื่องจาก Xcode เวอร์ชันนี้ไม่รองรับ target ต่ำกว่านั้น (พบกับ AsyncStorage)
-- Reanimated 4 ต้องใช้ `react-native-worklets` และต้องใส่ `'react-native-worklets/plugin'` เป็นลำดับสุดท้ายใน `babel.config.js`
-- Weather API: Open-Meteo ไม่ต้องใช้ API Key
+### รันโปรเจกต์
+
+```bash
+# เริ่ม Metro bundler
+npm start
+
+# รันบน iOS simulator (macOS เท่านั้น)
+npm run ios
+
+# รันบน Android emulator
+npm run android
+```
+
+### คำสั่งอื่น ๆ
+
+```bash
+# รัน unit tests
+npm test
+
+# รัน linter
+npm run lint
+```
+
+---
 
 ## 2. โครงสร้างของโปรเจกต์
 
 ```
 src/
-  navigation/   การนำทาง (Tab + Stack)
-  screens/      หน้าจอ (UI เท่านั้น)
-  components/   คอมโพเนนต์ที่ใช้ซ้ำ
-  store/        State และ business logic (Zustand)
-  services/     การเรียก API ภายนอก (Weather) และ cache
-  storage/      ชั้นเข้าถึงข้อมูลถาวร (AsyncStorage wrapper)
-  types/        TypeScript types
-  utils/        ฟังก์ชันช่วยเหลือ (pure functions)
-  theme/        สี/ระยะ/ฟอนต์ และ ThemeProvider (light/dark)
+├── components/
+│   ├── common/          # UI components ที่ใช้ร่วมกันทั้งแอป
+│   │                    #   EmptyState, FloatingTabBar, IconSegmentedControl,
+│   │                    #   ScreenHeader, Skeleton, StatusBanner
+│   ├── task/            # Components เฉพาะฟีเจอร์ Task
+│   │                    #   AgendaItem, Check, NotebookCard, SearchBar,
+│   │                    #   StatusFilter, WeekStrip
+│   └── weather/         # Components เฉพาะฟีเจอร์ Weather
+│                        #   CurrentWeatherCard, ForecastCard, WeatherSkeleton
+│
+├── navigation/
+│   └── RootNavigator.tsx   # กำหนด Tab และ Stack navigation ทั้งหมด
+│
+├── screens/
+│   ├── TaskListScreen.tsx     # หน้าหลัก — แสดงรายการ task แบบ agenda + calendar strip
+│   ├── TaskFormScreen.tsx     # หน้าสร้าง/แก้ไข task
+│   ├── TaskDetailScreen.tsx   # หน้าดูรายละเอียด task
+│   ├── WeatherScreen.tsx      # หน้าพยากรณ์อากาศ (current + 7-day forecast)
+│   └── SettingsScreen.tsx     # หน้าตั้งค่า (theme ฯลฯ)
+│
+├── store/
+│   ├── taskStore.ts         # factory สร้าง Zustand store สำหรับ task
+│   ├── useTaskStore.ts      # singleton instance + React hook
+│   ├── weatherStore.ts      # factory สร้าง Zustand store สำหรับ weather
+│   └── useWeatherStore.ts   # singleton instance + React hook
+│
+├── storage/
+│   ├── keyValueStore.ts     # interface นามธรรมสำหรับ key-value storage
+│   ├── appStorage.ts        # concrete implementation บน AsyncStorage
+│   ├── taskRepository.ts    # serialize/deserialize task พร้อม schema versioning
+│   └── weatherCache.ts      # cache ข้อมูลอากาศพร้อม key ตาม lat/lon
+│
+├── services/
+│   ├── weatherApi.ts        # เรียก Open-Meteo API + parse response
+│   ├── weatherCodes.ts      # แปลง WMO weather code เป็น label และ icon
+│   ├── weatherConfig.ts     # ค่าคงที่ (TTL, timeout, default location ฯลฯ)
+│   └── weatherErrors.ts     # typed error สำหรับทุก failure case ของ weather
+│
+├── theme/
+│   ├── ThemeProvider.tsx    # Context + hook สำหรับ light/dark theme
+│   ├── tokens.ts            # design tokens (spacing, fontSize, radius, palette)
+│   └── priority.ts          # สีตาม task priority
+│
+├── types/
+│   ├── task.ts              # type Task, TaskInput, Subtask, ValidationErrors
+│   ├── weather.ts           # type WeatherData, DailyForecast, GeoLocation
+│   └── navigation.ts        # type RootStackParamList, TabParamList
+│
+├── utils/
+│   ├── date.ts              # helper สำหรับ date string (YYYY-MM-DD)
+│   ├── time.ts              # helper สำหรับ time string (HH:MM)
+│   ├── id.ts                # สร้าง unique ID
+│   ├── cache.ts             # ตรวจสอบความสดของ cache ด้วย TTL
+│   ├── taskFilters.ts       # filter task ตาม status (all/active/done)
+│   ├── taskSelectors.ts     # group/sort task สำหรับแสดงผล
+│   ├── taskStatus.ts        # ตรวจสอบสถานะ (overdue, done ฯลฯ)
+│   └── taskValidation.ts    # validate TaskInput ก่อนบันทึก
+│
+└── mock/                    # ข้อมูล mock สำหรับ development และ test
 ```
+
+---
 
 ## 3. เหตุผลในการเลือกใช้เทคโนโลยี
 
-_(เติมระหว่างทำ ตอนนี้บันทึกไว้เบื้องต้น)_
+### State Management — Zustand
 
-- **React Navigation**: เป็นมาตรฐานของ React Native รองรับทั้ง Tab และ Stack ตามโจทย์
-- **Zustand**: เบา โค้ดน้อย แยก logic ออกจาก UI ได้ง่าย และทดสอบ store ได้โดยไม่ต้อง render
-- **AsyncStorage**: โจทย์ไม่ได้กำหนดชนิดของ storage ข้อมูลเป็น list ขนาดเล็ก ไม่จำเป็นต้องใช้ฐานข้อมูล โดยห่อด้วย wrapper เพื่อสลับไปใช้ตัวอื่นได้ภายหลัง
-- **Open-Meteo**: ไม่ต้องใช้ API Key ลดขั้นตอนการตั้งค่าของผู้ตรวจ
-- **Theme tokens**: รวมสีไว้ที่เดียว ทำให้รองรับ dark mode ได้โดยไม่ต้องแก้ทีละหน้า
+เลือก [Zustand](https://github.com/pmndrs/zustand) แทน Redux หรือ Context API เพราะ:
 
-## 4. ขอบเขตงานที่ยังไม่แล้วเสร็จและแผนการดำเนินการต่อ
+- **Boilerplate น้อย** — ไม่ต้องมี action type, reducer, หรือ provider ครอบ component tree; store เป็น plain function เขียนและอ่านได้ตรง ๆ
+- **Factory pattern** — `taskStore.ts` และ `weatherStore.ts` เป็น factory function ที่รับ dependency (repository, cache, fetch) เข้ามา ทำให้ inject mock ใน test ได้โดยไม่ต้องพึ่ง module mock
+- **Selector ที่ fine-grained** — component subscribe ได้เฉพาะ slice ที่ต้องการ ไม่ re-render โดยไม่จำเป็น
 
-_(ส่วนนี้จะอัปเดตทุกวันตลอดการทำงาน)_
+### การจัดเก็บข้อมูล — AsyncStorage + Repository Pattern
 
-| รายการ | สถานะ | หมายเหตุ / แผนต่อ |
-|---|---|---|
-| ส่วน Task (CRUD, กรอง, ค้นหา, persist) | ยังไม่เริ่ม | |
-| ส่วน Weather (3 สถานะ, cache 10 นาที) | ยังไม่เริ่ม | |
-| Unit test | ยังไม่เริ่ม | |
-| ฟีเจอร์เสริม | ยังไม่เริ่ม | |
+- **AsyncStorage** เหมาะกับข้อมูลขนาดเล็กอย่าง task list ที่ไม่ต้องการ query ซับซ้อน ไม่ต้องพึ่ง SQLite หรือ Realm
+- **`keyValueStore.ts`** เป็น interface นามธรรมที่คั่นกลางระหว่าง storage จริงกับ business logic ทำให้สลับ implementation ใน test ได้ง่าย (ใช้ in-memory store แทน AsyncStorage)
+- **`taskRepository.ts`** ห่อ serialize/deserialize พร้อม schema version และ type guard ป้องกัน corrupt data จากรุ่นเก่าของแอป
+- **`weatherCache.ts`** cache ข้อมูลอากาศด้วย key ที่ตาม lat/lon ลด API call ที่ซ้ำซ้อน โดย TTL ควบคุมผ่าน `weatherConfig.ts`
+
+### Weather API — Open-Meteo
+
+เลือก [Open-Meteo](https://open-meteo.com/) เพราะไม่ต้องใช้ API key และให้ข้อมูลพยากรณ์มาตรฐาน WMO ครบถ้วน (current + 7-day forecast) ฟรี เหมาะกับ prototype และการพัฒนาโดยไม่มี backend
+
+### Navigation — React Navigation
+
+ใช้ `@react-navigation/native-stack` สำหรับ Stack และ `@react-navigation/bottom-tabs` สำหรับ Tab ซึ่งเป็น standard ของ React Native ecosystem มี TypeScript type สำหรับ route params แบบ end-to-end ผ่าน `RootStackParamList` และ `TabParamList`
