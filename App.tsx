@@ -11,6 +11,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 import { useTaskStore } from './src/store/useTaskStore';
 import { seedDemoTasks } from './src/mock/seedDemo';
+import AppErrorBoundary from './src/components/common/AppErrorBoundary';
 
 function AppInner() {
   const { isDark, colors } = useTheme();
@@ -53,7 +54,9 @@ export default function App() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AppInner />
+          <AppErrorBoundary>
+            <AppInner />
+          </AppErrorBoundary>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

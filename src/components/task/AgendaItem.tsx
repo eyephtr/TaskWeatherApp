@@ -5,17 +5,12 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { Task } from '../../types/task';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../../theme/tokens';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 import { PRIORITY_COLOR } from '../../theme/priority';
 
 import Check from './Check';
 
 import { isOverdue } from '../../utils/taskStatus';
-
-const INK = palette.bistre;
-const INK_MUTED = '#7A6657'; // derived
-const OVERDUE_INK = '#B5402B'; // derived
-const CHIP_BG = `${palette.white}99`;
 
 interface Props {
     task: Task;
@@ -30,6 +25,7 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
     const time = task.start.replace(/^0/, ''); // 07:00 -> 7:00
     const range = task.end ? `${task.start} - ${task.end}` : null;
     const overdue = isOverdue(task);
+    const chipBg = colors.surface + '99';
 
     return (
         <View style={styles.row}>
@@ -42,27 +38,27 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
                 <View style={styles.top}>
                     <Text
                         numberOfLines={2}
-                        style={[styles.title, done && styles.titleDone]}>
+                        style={[styles.title, { color: colors.agendaInk }, done && { textDecorationLine: 'line-through', color: colors.agendaInkMuted }]}>
                         {task.title}
                     </Text>
-                    <View style={styles.chip}>
-                        <Text style={styles.chipText}>{task.tag}</Text>
+                    <View style={[styles.chip, { backgroundColor: chipBg }]}>
+                        <Text style={[styles.chipText, { color: colors.agendaInkMuted }]}>{task.tag}</Text>
                     </View>
                     <Check checked={done} onPress={onToggle} label={`Complete ${task.title}`} />
                 </View>
 
-                {range ? <Text style={styles.range}>{range}</Text> : null}
+                {range ? <Text style={[styles.range, { color: colors.agendaInkMuted }]}>{range}</Text> : null}
                 {overdue ? (
                     <View style={styles.overdue}>
-                        <Ionicons name="alert-circle" size={14} color={OVERDUE_INK} />
-                        <Text style={styles.overdueText}>Overdue</Text>
+                        <Ionicons name="alert-circle" size={14} color={colors.agendaOverdue} />
+                        <Text style={[styles.overdueText, { color: colors.agendaOverdue }]}>Overdue</Text>
                     </View>
                 ) : null}
 
                 {task.subtasks?.map(s => (
                     <View key={s.id} style={styles.subtask}>
                         <Check checked={s.done} onPress={() => onToggleSubtask(s.id)} label={s.title} size={22} />
-                        <Text style={[styles.subtaskText, s.done && styles.titleDone]}>{s.title}</Text>
+                        <Text style={[styles.subtaskText, { color: colors.agendaInk }, s.done && { textDecorationLine: 'line-through', color: colors.agendaInkMuted }]}>{s.title}</Text>
                     </View>
                 ))}
             </Pressable>
@@ -81,18 +77,16 @@ const styles = StyleSheet.create({
         gap: spacing.xs,
     },
     top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    title: { flex: 1, fontSize: fontSize.body, fontWeight: '700', color: INK },
-    titleDone: { textDecorationLine: 'line-through', color: INK_MUTED },
+    title: { flex: 1, fontSize: fontSize.body, fontWeight: '700' },
     chip: {
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: radius.pill,
-        backgroundColor: CHIP_BG,
     },
-    chipText: { fontSize: fontSize.caption, color: INK_MUTED },
-    range: { fontSize: fontSize.caption + 1, color: INK_MUTED },
+    chipText: { fontSize: fontSize.caption },
+    range: { fontSize: fontSize.caption + 1 },
     subtask: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
-    subtaskText: { flex: 1, fontSize: fontSize.body - 2, color: INK },
+    subtaskText: { flex: 1, fontSize: fontSize.body - 2 },
     overdue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    overdueText: { fontSize: fontSize.caption + 1, fontWeight: '600', color: OVERDUE_INK },
+    overdueText: { fontSize: fontSize.caption + 1, fontWeight: '600' },
 });

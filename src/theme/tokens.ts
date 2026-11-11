@@ -35,6 +35,9 @@ export interface ThemeColors {
     priorityMedium: string;
     priorityLow: string;
     ring: string;
+    agendaInk: string;
+    agendaInkMuted: string;
+    agendaOverdue: string;
 }
 
 export const lightColors: ThemeColors = {
@@ -58,6 +61,9 @@ export const lightColors: ThemeColors = {
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
     ring: palette.bistre,
+    agendaInk: '#3D2B1F',
+    agendaInkMuted: '#7A6657',
+    agendaOverdue: '#B5402B',
 };
 
 export const darkColors: ThemeColors = {
@@ -81,6 +87,9 @@ export const darkColors: ThemeColors = {
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
     ring: palette.raelynn,
+    agendaInk: '#D4B8A8',
+    agendaInkMuted: '#C4A090',
+    agendaOverdue: '#E07060',
 };
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;

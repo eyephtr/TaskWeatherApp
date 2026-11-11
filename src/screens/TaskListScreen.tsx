@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     LayoutAnimation,
     Pressable,
     ScrollView,
@@ -28,11 +29,13 @@ import IconSegmentedControl, { type SegmentOption } from '../components/common/I
 import SearchBar from '../components/task/SearchBar';
 import StatusFilter from '../components/task/StatusFilter';
 import EmptyState from '../components/common/EmptyState';
+import StatusBanner from '../components/common/StatusBanner';
 import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
 
 import { groupByDate, sortByDateTime, sortByStart } from '../utils/taskSelectors';
 import { filterTasks, type StatusFilter as Status } from '../utils/taskFilters';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
+import { useDebounce } from '../utils/useDebounce';
 
 type CalendarProps = React.ComponentProps<typeof CalendarList>;
 type ViewMode = 'list' | 'calendar';
@@ -61,12 +64,18 @@ export default function TaskListScreen() {
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [query, setQuery] = useState('');
-    const [status, setStatus] = useState<Status>('all');
+    const [statusFilter, setStatusFilter] = useState<Status>('all');
     const searching = searchOpen && query.trim().length > 0;
+
+    const debouncedQuery = useDebounce(query, 200);
 
     const allTasks = useTaskStore(s => s.tasks);
     const toggleDone = useTaskStore(s => s.toggleDone);
     const toggleSubtask = useTaskStore(s => s.toggleSubtask);
+    const storeStatus = useTaskStore(s => s.status);
+    const error = useTaskStore(s => s.error);
+    const clearError = useTaskStore(s => s.clearError);
+
     const tasksByDate = useMemo(() => groupByDate(allTasks), [allTasks]);
 
     useEffect(() => {
@@ -142,9 +151,9 @@ export default function TaskListScreen() {
     const visible = useMemo(
         () =>
             searching
-                ? sortByDateTime(filterTasks(allTasks, { status, query }))
-                : filterTasks(dayTasks, { status, query: '' }),
-        [searching, allTasks, dayTasks, status, query],
+                ? sortByDateTime(filterTasks(allTasks, { status: statusFilter, query: debouncedQuery }))
+                : filterTasks(dayTasks, { status: statusFilter, query: '' }),
+        [searching, allTasks, dayTasks, statusFilter, debouncedQuery],
     );
 
     const title = searching
@@ -189,10 +198,10 @@ export default function TaskListScreen() {
         return (
             <EmptyState
                 icon="funnel-outline"
-                title={status === 'done' ? 'No completed tasks' : 'No active tasks'}
+                title={statusFilter === 'done' ? 'No completed tasks' : 'No active tasks'}
                 message="Try a different filter."
                 actionLabel="Show all"
-                onAction={() => setStatus('all')}
+                onAction={() => setStatusFilter('all')}
             />
         );
     };
@@ -264,31 +273,40 @@ export default function TaskListScreen() {
             )}
 
             <NotebookCard title={title} subtitle={subtitle} style={styles.note}>
-                <StatusFilter value={status} onChange={setStatus} />
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode="on-drag"
-                    contentContainerStyle={{ paddingBottom: spacing.md }}>
-                    {visible.length === 0
-                        ? renderEmpty()
-                        : visible.map((t, i) => (
-                            <React.Fragment key={t.id}>
-                                {searching && (i === 0 || visible[i - 1].date !== t.date) ? (
-                                    <Text style={[styles.dateHeading, { color: colors.textMuted }]}>
-                                        {formatDate(t.date)}
-                                    </Text>
-                                ) : null}
-                                <AgendaItem
-                                    task={t}
-                                    done={t.done}
-                                    onToggle={() => toggleDone(t.id)}
-                                    onToggleSubtask={subtaskId => toggleSubtask(t.id, subtaskId)}
-                                    onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
-                                />
-                            </React.Fragment>
-                        ))}
-                </ScrollView>
+                {error ? (
+                    <StatusBanner title={error} actionLabel="OK" onAction={clearError} />
+                ) : null}
+                {storeStatus === 'loading' || storeStatus === 'idle' ? (
+                    <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1, alignSelf: 'center' }} />
+                ) : (
+                    <>
+                        <StatusFilter value={statusFilter} onChange={setStatusFilter} />
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            keyboardDismissMode="on-drag"
+                            contentContainerStyle={{ paddingBottom: spacing.md }}>
+                            {visible.length === 0
+                                ? renderEmpty()
+                                : visible.map((t, i) => (
+                                    <React.Fragment key={t.id}>
+                                        {searching && (i === 0 || visible[i - 1].date !== t.date) ? (
+                                            <Text style={[styles.dateHeading, { color: colors.textMuted }]}>
+                                                {formatDate(t.date)}
+                                            </Text>
+                                        ) : null}
+                                        <AgendaItem
+                                            task={t}
+                                            done={t.done}
+                                            onToggle={() => toggleDone(t.id)}
+                                            onToggleSubtask={subtaskId => toggleSubtask(t.id, subtaskId)}
+                                            onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
+                                        />
+                                    </React.Fragment>
+                                ))}
+                        </ScrollView>
+                    </>
+                )}
             </NotebookCard>
         </View>
     );

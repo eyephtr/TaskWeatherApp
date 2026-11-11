@@ -20,7 +20,10 @@ function isStoredTask(value: unknown): value is Task {
         typeof t.title === 'string' &&
         typeof t.date === 'string' &&
         typeof t.start === 'string' &&
-        Array.isArray(t.subtasks)
+        Array.isArray(t.subtasks) &&
+        typeof t.priority === 'string' &&
+        typeof t.createdAt === 'number' &&
+        typeof t.updatedAt === 'number'
     );
 }
 
@@ -35,6 +38,12 @@ export function createTaskRepository(kv: KeyValueStore): TaskRepository {
             }
             try {
                 const parsed = JSON.parse(raw);
+                if (typeof parsed.version !== 'number' || parsed.version < 1) {
+                    return [];
+                }
+                if (parsed.version > SCHEMA_VERSION) {
+                    return [];
+                }
                 return Array.isArray(parsed?.tasks) ? parsed.tasks.filter(isStoredTask) : [];
             } catch {
                 return [];
