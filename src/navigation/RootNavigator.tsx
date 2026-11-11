@@ -48,7 +48,7 @@ function Tabs() {
             <Tab.Screen
                 name="Weather"
                 component={WeatherScreen}
-                options={{ title: 'Weather', tabBarIcon: WeatherIcon }}
+                options={{ headerShown: false, title: 'Weather', tabBarIcon: WeatherIcon }}
             />
             <Tab.Screen
                 name="Settings"
