@@ -20,7 +20,6 @@ function AppInner() {
     colors: {
       ...base.colors,
       primary: colors.primary,
-      background: colors.background,
       card: colors.surface,
       text: colors.text,
       border: colors.border,

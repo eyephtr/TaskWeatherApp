@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useWeatherStore } from '../store/useWeatherStore';
 
@@ -66,7 +66,7 @@ export default function WeatherScreen() {
         : location.name;
 
     return (
-        <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={[styles.root, { backgroundColor: palette.peachPuff }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{

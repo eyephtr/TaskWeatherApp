@@ -84,7 +84,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
 
     if (taskId && !existing) {
         return (
-            <View style={[styles.center, { backgroundColor: colors.background }]}>
+            <View style={[styles.center, { backgroundColor: palette.raelynn }]}>
                 <Text style={[styles.notFound, { color: colors.text }]}>This task no longer exists.</Text>
                 <Pressable onPress={navigation.goBack} accessibilityRole="button">
                     <Text style={{ color: colors.primary }}>Go back</Text>
@@ -145,10 +145,10 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const pickerTheme = isDark ? 'dark' : 'light';
 
     return (
-        <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={[styles.root, { backgroundColor: palette.linenCream }]}>
             <ScreenHeader variant="close" title={taskId ? 'Edit Task' : 'New Task'} />
             <ScrollView
-                style={[styles.root, { backgroundColor: colors.background }]}
+                style={[styles.root, { backgroundColor: palette.raelynn }]}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 automaticallyAdjustKeyboardInsets>

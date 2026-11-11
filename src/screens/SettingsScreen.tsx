@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -25,7 +25,7 @@ function SettingRow({ icon, label, right, last }: RowProps) {
                 styles.row,
                 !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
             ]}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.background }]}>
+            <View style={[styles.iconWrap, { backgroundColor: palette.raelynn }]}>
                 <Ionicons name={icon} size={18} color={colors.text} />
             </View>
             <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
     const track = { false: colors.border, true: colors.primary };
 
     return (
-        <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={[styles.root, { backgroundColor: palette.raelynn }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{

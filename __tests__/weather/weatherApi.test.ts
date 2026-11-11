@@ -89,9 +89,8 @@ describe('fetchWeather', () => {
         jest.useFakeTimers();
         try {
             const promise = fetchWeather(bangkok, { fetchFn: hang, timeoutMs: 1000 });
-            const assertion = expect(promise).rejects.toMatchObject({ kind: 'timeout' });
             jest.advanceTimersByTime(1000);
-            await assertion;
+            await expect(promise).rejects.toMatchObject({ kind: 'timeout' });
         } finally {
             jest.useRealTimers();
         }

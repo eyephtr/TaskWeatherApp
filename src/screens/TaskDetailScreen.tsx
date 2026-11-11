@@ -118,7 +118,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const { taskId } = route.params;
-    const background = isDark ? colors.background : palette.linenCream;
+    const background = isDark ? palette.bistre : palette.linenCream;
 
     const liveTask = useTaskStore(s => s.tasks.find(t => t.id === taskId));
     const toggleDone = useTaskStore(s => s.toggleDone);

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { addDays, dayNames, diffDays, startOfWeek } from '../utils/date';
 
@@ -78,7 +78,7 @@ export default function WeekStrip({ selected, today, dots, onSelect }: Props) {
                                     styles.dayText,
                                     {
                                         color: isSelected
-                                            ? colors.background
+                                            ? palette.raelynn
                                             : isToday
                                                 ? colors.primary
                                                 : colors.text,

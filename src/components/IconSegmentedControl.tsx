@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { radius, spacing } from '../theme/tokens';
+import { palette, radius, spacing } from '../theme/tokens';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -33,7 +33,7 @@ export default function IconSegmentedControl<T extends string>({ options, value,
                         accessibilityLabel={o.label}
                         onPress={() => onChange(o.key)}
                         style={[styles.segment, active && { backgroundColor: colors.text }]}>
-                        <Ionicons name={o.icon} size={20} color={active ? colors.background : colors.text} />
+                        <Ionicons name={o.icon} size={20} color={active ? palette.raelynn : colors.text} />
                     </Pressable>
                 );
             })}

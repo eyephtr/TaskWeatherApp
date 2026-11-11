@@ -17,7 +17,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 
@@ -125,7 +125,7 @@ export default function TaskListScreen() {
             textDisabledColor: colors.textMuted,
             todayTextColor: colors.primary,
             selectedDayBackgroundColor: colors.text,
-            selectedDayTextColor: colors.background,
+            selectedDayTextColor: palette.raelynn,
             textDayFontWeight: '500',
             textDayHeaderFontWeight: '500',
             weekVerticalMargin: 2,
@@ -198,7 +198,7 @@ export default function TaskListScreen() {
     };
 
     return (
-        <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <View style={[styles.root, { backgroundColor: palette.raelynn }]}>
             {searchOpen ? (
                 <SearchBar value={query} onChangeText={setQuery} onClose={closeSearch} />
             ) : (
