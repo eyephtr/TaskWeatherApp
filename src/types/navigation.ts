@@ -1,8 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type TabParamList = {
-    Tasks: undefined;
-    Agenda: undefined;
+    Tasks: { flip?: number } | undefined;
     Weather: undefined;
     Settings: undefined;
 };
@@ -10,5 +9,5 @@ export type TabParamList = {
 export type RootStackParamList = {
     Tabs: NavigatorScreenParams<TabParamList>;
     TaskDetail: { taskId: string };
-    TaskForm: { taskId?: string; date?: string } | undefined;
+    TaskForm: { taskId?: string; date?: string } | undefined; // kept for edit flow from TaskDetailScreen
 };

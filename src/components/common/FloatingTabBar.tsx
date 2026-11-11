@@ -1,11 +1,7 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-import type { RootStackParamList } from '../../types/navigation';
 
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../../theme/tokens';
@@ -20,17 +16,33 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
 
-    const stackNavigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const isTasksTab = state.routes[state.index]?.name === 'Tasks';
 
-    const handleAddTask = () => {
-        stackNavigation.navigate('TaskForm');
+    // Animate the bar width/padding based on whether FAB is showing
+    const animValue = useRef(new Animated.Value(isTasksTab ? 1 : 0)).current;
+    useEffect(() => {
+        Animated.spring(animValue, {
+            toValue: isTasksTab ? 1 : 0,
+            useNativeDriver: false,
+        }).start();
+    }, [isTasksTab]);
+
+    const barStyle = {
+        paddingHorizontal: animValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [spacing.xl * 2, spacing.xs + 2],
+        }),
+        alignSelf: animValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['center', 'stretch'],
+        }) as any,
     };
 
     return (
         <View
             pointerEvents="box-none"
             style={[styles.wrap, { bottom: Math.max(insets.bottom - spacing.md, spacing.sm) }]}>
-            <View style={[styles.bar, { backgroundColor: palette.bistre, borderColor: palette.bistre }]}>
+            <Animated.View style={[styles.bar, { backgroundColor: palette.bistre, borderColor: palette.bistre }, barStyle]}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
                     const focused = state.index === index;
@@ -68,18 +80,20 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                         </Pressable>
                     );
                 })}
-            </View>
+            </Animated.View>
 
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add task"
-                onPress={handleAddTask}
-                style={[styles.fab, { backgroundColor: colors.primary }]}>
-                <View style={styles.plus}>
-                    <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
-                    <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
-                </View>
-            </Pressable>
+            {isTasksTab ? (
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Add task"
+                    onPress={() => navigation.navigate('Tasks', { flip: Date.now() })}
+                    style={[styles.fab, { backgroundColor: colors.primary }]}>
+                    <View style={styles.plus}>
+                        <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
+                        <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
+                    </View>
+                </Pressable>
+            ) : null}
         </View>
     );
 }
@@ -94,10 +108,10 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     bar: {
-        flex: 1,
+        // flex:1 removed — controlled by animated barStyle
         flexDirection: 'row',
         height: BAR_HEIGHT,
-        padding: spacing.xs + 2,
+        paddingVertical: spacing.xs + 2,
         borderRadius: radius.pill,
         borderWidth: StyleSheet.hairlineWidth,
         shadowColor: palette.bistre,

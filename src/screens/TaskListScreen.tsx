@@ -12,17 +12,18 @@ import {
 import { CalendarList, type DateData } from 'react-native-calendars';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
-import type { RootStackParamList } from '../types/navigation';
+import type { RootStackParamList, TabParamList } from '../types/navigation';
 
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 
-import NotebookCard from '../components/task/NotebookCard';
+import FlippableNotebookCard from '../components/task/FlippableNotebookCard';
 import AgendaItem from '../components/task/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/task/WeekStrip';
 import IconSegmentedControl, { type SegmentOption } from '../components/common/IconSegmentedControl';
@@ -54,10 +55,12 @@ export default function TaskListScreen() {
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const route = useRoute<BottomTabScreenProps<TabParamList, 'Tasks'>['route']>();
 
     const today = useMemo(() => toDateString(new Date()), []);
     const [mode, setMode] = useState<ViewMode>('calendar');
     const [selected, setSelected] = useState(today);
+    const [isFlipped, setIsFlipped] = useState(false);
 
     const [calendarStart, setCalendarStart] = useState(today);
     const [visibleMonth, setVisibleMonth] = useState(() => monthStartOf(today));
@@ -77,6 +80,13 @@ export default function TaskListScreen() {
     const clearError = useTaskStore(s => s.clearError);
 
     const tasksByDate = useMemo(() => groupByDate(allTasks), [allTasks]);
+
+    // Flip card when FAB is pressed from FloatingTabBar
+    useEffect(() => {
+        if (route.params?.flip) {
+            setIsFlipped(true);
+        }
+    }, [route.params?.flip]);
 
     useEffect(() => {
         setVisibleMonth(monthStartOf(calendarStart));
@@ -272,7 +282,13 @@ export default function TaskListScreen() {
                 </View>
             )}
 
-            <NotebookCard title={title} subtitle={subtitle} style={styles.note}>
+            <FlippableNotebookCard
+                title={title}
+                subtitle={subtitle}
+                style={styles.note}
+                isFlipped={isFlipped}
+                onFlipBack={() => setIsFlipped(false)}
+                initialDate={selected}>
                 {error ? (
                     <StatusBanner title={error} actionLabel="OK" onAction={clearError} />
                 ) : null}
@@ -307,7 +323,7 @@ export default function TaskListScreen() {
                         </ScrollView>
                     </>
                 )}
-            </NotebookCard>
+            </FlippableNotebookCard>
         </View>
     );
 }
