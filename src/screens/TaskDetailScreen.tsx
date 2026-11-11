@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 import type { RootStackParamList } from '../types/navigation';
 import type { Task } from '../types/task';
+
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import { PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
+
 import { useTaskStore } from '../store/useTaskStore';
-import { formatDate } from '../utils/date';
+
 import Check from '../components/Check';
+
+import { formatDate } from '../utils/date';
+import { isOverdue } from '../utils/taskStatus';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -121,7 +128,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                 <InfoRow
                     icon="checkmark-circle-outline"
                     label="Status"
-                    value={task.done ? 'Completed' : 'Not completed'}
+                    value={task.done ? 'Completed' : isOverdue(task) ? 'Overdue' : 'Not completed'}
                     last
                 />
             </View>
