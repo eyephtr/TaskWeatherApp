@@ -1,10 +1,7 @@
 import type { Task } from '../types/task';
+import type { KeyValueStore } from './keyValueStore';
 
-export interface KeyValueStore {
-    getItem(key: string): Promise<string | null>;
-    setItem(key: string, value: string): Promise<void>;
-}
-
+export type { KeyValueStore };
 export interface TaskRepository {
     load(): Promise<Task[]>;
     save(tasks: Task[]): Promise<void>;
