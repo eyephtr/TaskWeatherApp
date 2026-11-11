@@ -2,15 +2,15 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import type { Task } from '../types/task';
+import type { Task } from '../../types/task';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
-import { PRIORITY_COLOR } from '../theme/priority';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, palette, radius, spacing } from '../../theme/tokens';
+import { PRIORITY_COLOR } from '../../theme/priority';
 
 import Check from './Check';
 
-import { isOverdue } from '../utils/taskStatus';
+import { isOverdue } from '../../utils/taskStatus';
 
 const INK = palette.bistre;
 const INK_MUTED = '#7A6657'; // derived

@@ -2,8 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 
 interface Props {
     title: string;

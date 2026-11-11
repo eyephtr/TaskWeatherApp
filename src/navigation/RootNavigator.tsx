@@ -8,7 +8,7 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 
-import FloatingTabBar from '../components/FloatingTabBar';
+import FloatingTabBar from '../components/common/FloatingTabBar';
 
 import TaskListScreen from '../screens/TaskListScreen';
 import WeatherScreen from '../screens/WeatherScreen';

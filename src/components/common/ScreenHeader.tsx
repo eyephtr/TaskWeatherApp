@@ -4,8 +4,8 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 
 export const HEADER_BUTTON_SIZE = 44;
 

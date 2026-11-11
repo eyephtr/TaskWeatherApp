@@ -23,8 +23,8 @@ import { PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
 
 import { useTaskStore } from '../store/useTaskStore';
 
-import Check from '../components/Check';
-import ScreenHeader, { HEADER_BUTTON_SIZE, HeaderButton } from '../components/ScreenHeader';
+import Check from '../components/task/Check';
+import ScreenHeader, { HEADER_BUTTON_SIZE, HeaderButton } from '../components/common/ScreenHeader';
 
 import { formatDate } from '../utils/date';
 import { isOverdue } from '../utils/taskStatus';

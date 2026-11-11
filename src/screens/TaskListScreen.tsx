@@ -21,14 +21,14 @@ import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 
-import NotebookCard from '../components/NotebookCard';
-import AgendaItem from '../components/AgendaItem';
-import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/WeekStrip';
-import IconSegmentedControl, { type SegmentOption } from '../components/IconSegmentedControl';
-import SearchBar from '../components/SearchBar';
-import StatusFilter from '../components/StatusFilter';
-import EmptyState from '../components/EmptyState';
-import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
+import NotebookCard from '../components/task/NotebookCard';
+import AgendaItem from '../components/task/AgendaItem';
+import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/task/WeekStrip';
+import IconSegmentedControl, { type SegmentOption } from '../components/common/IconSegmentedControl';
+import SearchBar from '../components/task/SearchBar';
+import StatusFilter from '../components/task/StatusFilter';
+import EmptyState from '../components/common/EmptyState';
+import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
 
 import { groupByDate, sortByDateTime, sortByStart } from '../utils/taskSelectors';
 import { filterTasks, type StatusFilter as Status } from '../utils/taskFilters';

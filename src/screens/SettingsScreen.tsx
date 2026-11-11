@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
+import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
 
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';

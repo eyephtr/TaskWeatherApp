@@ -9,11 +9,11 @@ import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useWeatherStore } from '../store/useWeatherStore';
 
-import CurrentWeatherCard from '../components/CurrentWeatherCard';
-import ForecastCard from '../components/ForecastCard';
-import StatusBanner from '../components/StatusBanner';
-import WeatherSkeleton from '../components/WeatherSkeleton';
-import { TAB_BAR_CLEARANCE } from '../components/FloatingTabBar';
+import CurrentWeatherCard from '../components/weather/CurrentWeatherCard';
+import ForecastCard from '../components/weather/ForecastCard';
+import StatusBanner from '../components/common/StatusBanner';
+import WeatherSkeleton from '../components/weather/WeatherSkeleton';
+import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
 
 import { toDateString } from '../utils/date';
 import { formatUpdatedAgo } from '../utils/time';

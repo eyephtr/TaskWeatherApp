@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { StatusFilter as Status } from '../utils/taskFilters';
+import type { StatusFilter as Status } from '../../utils/taskFilters';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, palette, radius, spacing } from '../../theme/tokens';
 
 const OPTIONS: readonly { key: Status; label: string }[] = [
     { key: 'all', label: 'All' },

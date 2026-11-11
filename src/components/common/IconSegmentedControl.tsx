@@ -2,8 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { palette, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette, radius, spacing } from '../../theme/tokens';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 

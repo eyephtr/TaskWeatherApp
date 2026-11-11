@@ -21,7 +21,7 @@ import { PRIORITIES, PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
 
 import { useTaskStore } from '../store/useTaskStore';
 
-import ScreenHeader from '../components/ScreenHeader';
+import ScreenHeader from '../components/common/ScreenHeader';
 
 import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../utils/taskValidation';

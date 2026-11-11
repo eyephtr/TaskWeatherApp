@@ -8,8 +8,8 @@ import {
     type ViewStyle,
 } from 'react-native';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { radius } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { radius } from '../../theme/tokens';
 
 interface GroupProps {
     children: React.ReactNode;

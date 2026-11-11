@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { radius, spacing } from '../../theme/tokens';
 
-import { Skeleton, SkeletonBlock } from './Skeleton';
+import { Skeleton, SkeletonBlock } from '../common/Skeleton';
 
 export default function WeatherSkeleton() {
     const { colors } = useTheme();

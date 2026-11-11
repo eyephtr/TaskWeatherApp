@@ -10,10 +10,10 @@ import {
     type NativeSyntheticEvent,
 } from 'react-native';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, palette, radius, spacing } from '../../theme/tokens';
 
-import { addDays, dayNames, diffDays, startOfWeek } from '../utils/date';
+import { addDays, dayNames, diffDays, startOfWeek } from '../../utils/date';
 
 export const WEEK_STRIP_HEIGHT = 84;
 const WEEK_RANGE = 52; // เลื่อนได้ย้อนหลังและล่วงหน้าอย่างละ 52 สัปดาห์

@@ -2,12 +2,12 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import type { WeatherData } from '../types/weather';
+import type { WeatherData } from '../../types/weather';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, spacing } from '../../theme/tokens';
 
-import { describeWeather } from '../services/weatherCodes';
+import { describeWeather } from '../../services/weatherCodes';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 

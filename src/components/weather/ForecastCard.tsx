@@ -2,13 +2,13 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import type { DailyForecast } from '../types/weather';
+import type { DailyForecast } from '../../types/weather';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 
-import { describeWeather } from '../services/weatherCodes';
-import { weekdayShort } from '../utils/date';
+import { describeWeather } from '../../services/weatherCodes';
+import { weekdayShort } from '../../utils/date';
 
 const RAIN_CHANCE_SHOWN = 30; // แสดงโอกาสฝนเมื่อตั้งแต่ 30% ขึ้นไป
 

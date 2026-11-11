@@ -2,8 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 
-import { useTheme } from '../theme/ThemeProvider';
-import { palette } from '../theme/tokens';
+import { useTheme } from '../../theme/ThemeProvider';
+import { palette } from '../../theme/tokens';
 
 interface Props {
     checked: boolean;
