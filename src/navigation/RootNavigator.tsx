@@ -62,19 +62,25 @@ function Tabs() {
 export default function RootNavigator() {
     return (
         <Stack.Navigator>
-            <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+            <Stack.Screen
+                name="Tabs"
+                component={Tabs}
+                options={{ headerShown: false }}
+            />
+
             <Stack.Screen
                 name="TaskDetail"
                 component={TaskDetailScreen}
-                options={{ title: 'Task Details' }}
+                options={{ headerShown: false }}
             />
+
             <Stack.Screen
                 name="TaskForm"
                 component={TaskFormScreen}
-                options={({ route }) => ({
+                options={{
                     presentation: 'modal',
-                    title: route.params?.taskId ? 'Edit Task' : 'New Task',
-                })}
+                    headerShown: false,
+                }}
             />
         </Stack.Navigator>
     );

@@ -21,6 +21,8 @@ import { PRIORITIES, PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
 
 import { useTaskStore } from '../store/useTaskStore';
 
+import ScreenHeader from '../components/ScreenHeader';
+
 import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../utils/taskValidation';
 
@@ -143,187 +145,191 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const pickerTheme = isDark ? 'dark' : 'light';
 
     return (
-        <ScrollView
-            style={[styles.root, { backgroundColor: colors.background }]}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets>
-            <Field label="Title" error={errors.title}>
-                <TextInput
-                    accessibilityLabel="Task title"
-                    value={title}
-                    onChangeText={t => {
-                        setTitle(t);
-                        clearError('title');
-                    }}
-                    placeholder="What needs to be done?"
-                    placeholderTextColor={colors.textMuted}
-                    maxLength={TITLE_MAX}
-                    returnKeyType="done"
-                    style={inputStyle(!!errors.title)}
-                />
-            </Field>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+            <ScreenHeader variant="close" title={taskId ? 'Edit Task' : 'New Task'} />
+            <ScrollView
+                style={[styles.root, { backgroundColor: colors.background }]}
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets>
+                <Field label="Title" error={errors.title}>
+                    <TextInput
+                        accessibilityLabel="Task title"
+                        value={title}
+                        onChangeText={t => {
+                            setTitle(t);
+                            clearError('title');
+                        }}
+                        placeholder="What needs to be done?"
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={TITLE_MAX}
+                        returnKeyType="done"
+                        style={inputStyle(!!errors.title)}
+                    />
+                </Field>
 
-            <Field label="Priority">
-                <View style={styles.chips}>
-                    {PRIORITIES.map(p => {
-                        const active = p === priority;
-                        return (
-                            <Pressable
-                                key={p}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: active }}
-                                onPress={() => setPriority(p)}
-                                style={[
-                                    styles.chip,
-                                    { backgroundColor: PRIORITY_COLOR[p] },
-                                    active ? { borderColor: colors.text } : styles.chipInactive,
-                                ]}>
-                                <Text style={styles.chipText}>{PRIORITY_LABEL[p]}</Text>
-                            </Pressable>
-                        );
-                    })}
-                </View>
-            </Field>
+                <Field label="Priority">
+                    <View style={styles.chips}>
+                        {PRIORITIES.map(p => {
+                            const active = p === priority;
+                            return (
+                                <Pressable
+                                    key={p}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: active }}
+                                    onPress={() => setPriority(p)}
+                                    style={[
+                                        styles.chip,
+                                        { backgroundColor: PRIORITY_COLOR[p] },
+                                        active ? { borderColor: colors.text } : styles.chipInactive,
+                                    ]}>
+                                    <Text style={styles.chipText}>{PRIORITY_LABEL[p]}</Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </Field>
 
-            <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
-                <PickerRow label="Date">
+                <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
+                    <PickerRow label="Date">
+                        <DateTimePicker
+                            value={fromDateString(date)}
+                            mode="date"
+                            display="compact"
+                            locale="en-GB"
+                            themeVariant={pickerTheme}
+                            onValueChange={(_, d) => {
+                                setDate(toDateString(d));
+                                clearError('date');
+                            }}
+                        />
+                    </PickerRow>
                     <DateTimePicker
-                        value={fromDateString(date)}
-                        mode="date"
+                        value={fromTimeString(start)}
+                        mode="time"
                         display="compact"
                         themeVariant={pickerTheme}
                         onValueChange={(_, d) => {
-                            setDate(toDateString(d));
-                            clearError('date');
+                            setStart(toTimeString(d));
+                            clearError('start');
                         }}
                     />
-                </PickerRow>
-                <DateTimePicker
-                    value={fromTimeString(start)}
-                    mode="time"
-                    display="compact"
-                    themeVariant={pickerTheme}
-                    onValueChange={(_, d) => {
-                        setStart(toTimeString(d));
-                        clearError('start');
-                    }}
-                />
-                {end === null ? (
-                    <Pressable
-                        accessibilityRole="button"
-                        onPress={() => setEnd(addMinutes(start, 60))}
-                        style={styles.addEnd}>
-                        <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-                        <Text style={{ color: colors.text }}>Add end time</Text>
-                    </Pressable>
-                ) : (
-                    <PickerRow label="End">
-                        <View style={styles.endControls}>
-                            <DateTimePicker
-                                value={fromTimeString(end)}
-                                mode="time"
-                                display="compact"
-                                themeVariant={pickerTheme}
-                                onValueChange={(_, d) => {
-                                    setEnd(toTimeString(d));
-                                    clearError('end');
-                                }}
-                            />
+                    {end === null ? (
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => setEnd(addMinutes(start, 60))}
+                            style={styles.addEnd}>
+                            <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+                            <Text style={{ color: colors.text }}>Add end time</Text>
+                        </Pressable>
+                    ) : (
+                        <PickerRow label="End">
+                            <View style={styles.endControls}>
+                                <DateTimePicker
+                                    value={fromTimeString(end)}
+                                    mode="time"
+                                    display="compact"
+                                    themeVariant={pickerTheme}
+                                    onValueChange={(_, d) => {
+                                        setEnd(toTimeString(d));
+                                        clearError('end');
+                                    }}
+                                />
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Remove end time"
+                                    hitSlop={8}
+                                    onPress={() => {
+                                        setEnd(null);
+                                        clearError('end');
+                                    }}>
+                                    <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+                                </Pressable>
+                            </View>
+                        </PickerRow>
+                    )}
+                </Field>
+
+                <Field label="Tag" error={errors.tag}>
+                    <TextInput
+                        accessibilityLabel="Task tag"
+                        value={tag}
+                        onChangeText={t => {
+                            setTag(t);
+                            clearError('tag');
+                        }}
+                        placeholder="General"
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={TAG_MAX + 10}
+                        style={inputStyle(!!errors.tag)}
+                    />
+                </Field>
+
+                <View
+                    style={[styles.pickerRow, styles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={styles.switchText}>
+                        <Text style={[styles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
+                        <Text style={[styles.hint, { color: colors.textMuted }]}>
+                            Get a weather warning on this task
+                        </Text>
+                    </View>
+                    <Switch
+                        value={outdoor}
+                        onValueChange={setOutdoor}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                </View>
+
+                <Field label="Subtasks">
+                    {subtasks.map((s, i) => (
+                        <View
+                            key={s.id ?? `new-${i}`}
+                            style={[styles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <Text style={[styles.subtaskText, { color: colors.text }]}>{s.title}</Text>
                             <Pressable
                                 accessibilityRole="button"
-                                accessibilityLabel="Remove end time"
+                                accessibilityLabel={`Remove ${s.title}`}
                                 hitSlop={8}
-                                onPress={() => {
-                                    setEnd(null);
-                                    clearError('end');
-                                }}>
+                                onPress={() => setSubtasks(prev => prev.filter((_, idx) => idx !== i))}>
                                 <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                             </Pressable>
                         </View>
-                    </PickerRow>
-                )}
-            </Field>
-
-            <Field label="Tag" error={errors.tag}>
-                <TextInput
-                    accessibilityLabel="Task tag"
-                    value={tag}
-                    onChangeText={t => {
-                        setTag(t);
-                        clearError('tag');
-                    }}
-                    placeholder="General"
-                    placeholderTextColor={colors.textMuted}
-                    maxLength={TAG_MAX + 10}
-                    style={inputStyle(!!errors.tag)}
-                />
-            </Field>
-
-            <View
-                style={[styles.pickerRow, styles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={styles.switchText}>
-                    <Text style={[styles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
-                    <Text style={[styles.hint, { color: colors.textMuted }]}>
-                        Get a weather warning on this task
-                    </Text>
-                </View>
-                <Switch
-                    value={outdoor}
-                    onValueChange={setOutdoor}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                />
-            </View>
-
-            <Field label="Subtasks">
-                {subtasks.map((s, i) => (
-                    <View
-                        key={s.id ?? `new-${i}`}
-                        style={[styles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={[styles.subtaskText, { color: colors.text }]}>{s.title}</Text>
+                    ))}
+                    <View style={styles.subtaskInputRow}>
+                        <TextInput
+                            accessibilityLabel="New subtask"
+                            value={newSubtask}
+                            onChangeText={setNewSubtask}
+                            onSubmitEditing={addSubtask}
+                            placeholder="Add a subtask"
+                            placeholderTextColor={colors.textMuted}
+                            returnKeyType="done"
+                            style={[inputStyle(false), styles.subtaskInput]}
+                        />
                         <Pressable
                             accessibilityRole="button"
-                            accessibilityLabel={`Remove ${s.title}`}
-                            hitSlop={8}
-                            onPress={() => setSubtasks(prev => prev.filter((_, idx) => idx !== i))}>
-                            <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+                            accessibilityLabel="Add subtask"
+                            onPress={addSubtask}
+                            style={[styles.addButton, { backgroundColor: colors.surfaceAlt }]}>
+                            <Ionicons name="add" size={22} color={colors.text} />
                         </Pressable>
                     </View>
-                ))}
-                <View style={styles.subtaskInputRow}>
-                    <TextInput
-                        accessibilityLabel="New subtask"
-                        value={newSubtask}
-                        onChangeText={setNewSubtask}
-                        onSubmitEditing={addSubtask}
-                        placeholder="Add a subtask"
-                        placeholderTextColor={colors.textMuted}
-                        returnKeyType="done"
-                        style={[inputStyle(false), styles.subtaskInput]}
-                    />
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Add subtask"
-                        onPress={addSubtask}
-                        style={[styles.addButton, { backgroundColor: colors.surfaceAlt }]}>
-                        <Ionicons name="add" size={22} color={colors.text} />
-                    </Pressable>
-                </View>
-            </Field>
+                </Field>
 
-            <Pressable
-                accessibilityRole="button"
-                onPress={handleSave}
-                style={[styles.save, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.saveText, { color: colors.onPrimary }]}>
-                    {taskId ? 'Save changes' : 'Add task'}
-                </Text>
-            </Pressable>
+                <Pressable
+                    accessibilityRole="button"
+                    onPress={handleSave}
+                    style={[styles.save, { backgroundColor: colors.primary }]}>
+                    <Text style={[styles.saveText, { color: colors.onPrimary }]}>
+                        {taskId ? 'Save changes' : 'Add task'}
+                    </Text>
+                </Pressable>
 
-            <Pressable accessibilityRole="button" onPress={navigation.goBack} style={styles.cancel}>
-                <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>Cancel</Text>
-            </Pressable>
-        </ScrollView>
+                <Pressable accessibilityRole="button" onPress={navigation.goBack} style={styles.cancel}>
+                    <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>Cancel</Text>
+                </Pressable>
+            </ScrollView>
+        </View>
     );
 }
 

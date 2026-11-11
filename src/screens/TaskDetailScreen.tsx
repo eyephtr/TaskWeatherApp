@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+    Alert,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -14,6 +24,7 @@ import { PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
 import { useTaskStore } from '../store/useTaskStore';
 
 import Check from '../components/Check';
+import ScreenHeader, { HEADER_BUTTON_SIZE, HeaderButton } from '../components/ScreenHeader';
 
 import { formatDate } from '../utils/date';
 import { isOverdue } from '../utils/taskStatus';
@@ -21,60 +32,108 @@ import { isOverdue } from '../utils/taskStatus';
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const INK = palette.bistre;
-const INK_MUTED = '#7A6657'; // derived
-const CHIP_BG = `${palette.white}99`;
+function Divider() {
+    const { colors } = useTheme();
+    return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
+}
 
-function Badge({ text, icon }: { text: string; icon?: IconName }) {
+function SectionTitle({ children, right }: { children: string; right?: string }) {
+    const { colors } = useTheme();
     return (
-        <View style={styles.badge}>
-            {icon ? <Ionicons name={icon} size={14} color={INK_MUTED} /> : null}
-            <Text style={styles.badgeText}>{text}</Text>
+        <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{children}</Text>
+            {right ? <Text style={[styles.sectionRight, { color: colors.textMuted }]}>{right}</Text> : null}
         </View>
     );
 }
 
-function InfoRow({
-    icon,
-    label,
-    value,
-    last,
-}: {
-    icon: IconName;
-    label: string;
-    value: string;
-    last?: boolean;
-}) {
+function Pill({ text, icon, style }: { text: string; icon?: IconName; style?: object }) {
     const { colors } = useTheme();
+    return (
+        <View style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
+            {icon ? <Ionicons name={icon} size={20} color={colors.text} /> : null}
+            <Text style={[styles.pillText, { color: colors.text }]}>{text}</Text>
+        </View>
+    );
+}
+
+function Chip({ text, bg, fg, icon }: { text: string; bg: string; fg: string; icon?: IconName }) {
+    return (
+        <View style={[styles.chip, { backgroundColor: bg }]}>
+            {icon ? <Ionicons name={icon} size={14} color={fg} /> : null}
+            <Text style={[styles.chipText, { color: fg }]}>{text}</Text>
+        </View>
+    );
+}
+
+function PropertyRow({ label, children }: { label: string; children: React.ReactNode }) {
+    const { colors } = useTheme();
+    return (
+        <View style={styles.propRow}>
+            <Text style={[styles.propLabel, { color: colors.text }]}>{label}</Text>
+            <View style={styles.propValue}>{children}</View>
+        </View>
+    );
+}
+
+function AddSubtaskRow({ onAdd, bordered }: { onAdd: (title: string) => void; bordered?: boolean }) {
+    const { colors } = useTheme();
+    const [text, setText] = useState('');
+
+    const submit = () => {
+        const value = text.trim();
+        if (!value) {
+            return;
+        }
+        onAdd(value);
+        setText('');
+    };
+
     return (
         <View
             style={[
-                styles.infoRow,
-                !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
+                styles.addRow,
+                bordered && [
+                    styles.subtaskRow,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                ],
             ]}>
-            <Ionicons name={icon} size={20} color={colors.textMuted} />
-            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{label}</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
+            <View style={[styles.squareBox, { borderColor: colors.textMuted }]} />
+            <TextInput
+                accessibilityLabel="Add subtask"
+                value={text}
+                onChangeText={setText}
+                onSubmitEditing={submit}
+                blurOnSubmit={false}
+                returnKeyType="done"
+                placeholder="Add subtask"
+                placeholderTextColor={colors.textMuted}
+                style={[styles.addInput, { color: colors.text }]}
+            />
         </View>
     );
 }
 
 export default function TaskDetailScreen({ navigation, route }: Props) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
     const { taskId } = route.params;
+    const background = isDark ? colors.background : palette.linenCream;
 
     const liveTask = useTaskStore(s => s.tasks.find(t => t.id === taskId));
     const toggleDone = useTaskStore(s => s.toggleDone);
     const toggleSubtask = useTaskStore(s => s.toggleSubtask);
+    const updateTask = useTaskStore(s => s.updateTask);
     const deleteTask = useTaskStore(s => s.deleteTask);
 
-    // เก็บสำเนาไว้ตอนลบ เพื่อไม่ให้หน้าเปลี่ยนเป็น "not found" วูบหนึ่งระหว่างอนิเมชันย้อนกลับ
     const [deleted, setDeleted] = useState<Task | null>(null);
     const task = liveTask ?? deleted;
 
+    const [menuOpen, setMenuOpen] = useState(false);
+
     if (!task) {
         return (
-            <View style={[styles.center, { backgroundColor: colors.background }]}>
+            <View style={[styles.center, { backgroundColor: background }]}>
                 <Text style={[styles.notFound, { color: colors.text }]}>This task no longer exists.</Text>
                 <Pressable onPress={navigation.goBack} accessibilityRole="button">
                     <Text style={{ color: colors.primary, fontSize: fontSize.body }}>Go back</Text>
@@ -83,8 +142,37 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
         );
     }
 
-    const time = task.end ? `${task.start} - ${task.end}` : task.start;
+    const overdue = isOverdue(task);
+    const status = task.done
+        ? { text: 'Completed', bg: colors.success, fg: colors.onSuccess }
+        : overdue
+            ? { text: 'Overdue', bg: colors.danger, fg: colors.onDanger }
+            : { text: 'To do', bg: colors.weatherCard, fg: colors.onWeatherCard };
     const doneSubtasks = task.subtasks.filter(s => s.done).length;
+    const menuTop = Math.max(insets.top, spacing.md) + spacing.sm + HEADER_BUTTON_SIZE + spacing.sm;
+
+    const saveSubtasks = (subtasks: { id?: string; title: string; done: boolean }[]) => {
+        updateTask(task.id, {
+            title: task.title,
+            date: task.date,
+            start: task.start,
+            end: task.end,
+            tag: task.tag,
+            priority: task.priority,
+            outdoor: task.outdoor,
+            subtasks,
+        });
+    };
+
+    const currentSubtasks = () =>
+        task.subtasks.map(s => ({ id: s.id, title: s.title, done: s.done }));
+
+    const addSubtask = (title: string) => saveSubtasks([...currentSubtasks(), { title, done: false }]);
+
+    const removeSubtask = (subtaskId: string) =>
+        saveSubtasks(currentSubtasks().filter(s => s.id !== subtaskId));
+
+    const closeMenu = () => setMenuOpen(false);
 
     const confirmDelete = () => {
         Alert.alert('Delete task?', `"${task.title}" will be removed permanently.`, [
@@ -102,141 +190,276 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
     };
 
     return (
-        <ScrollView
-            style={[styles.root, { backgroundColor: colors.background }]}
-            contentContainerStyle={styles.content}>
-            <View style={[styles.hero, { backgroundColor: PRIORITY_COLOR[task.priority] }]}>
-                <View style={styles.heroTop}>
-                    <Check
-                        checked={task.done}
-                        onPress={() => toggleDone(task.id)}
-                        label={`Complete ${task.title}`}
-                        size={32}
-                    />
-                    <Text style={[styles.title, task.done && styles.titleDone]}>{task.title}</Text>
-                </View>
-                <View style={styles.badges}>
-                    <Badge text={task.tag} />
-                    <Badge text={`${PRIORITY_LABEL[task.priority]} priority`} />
-                    {task.outdoor ? <Badge text="Outdoor" icon="partly-sunny-outline" /> : null}
-                </View>
-            </View>
+        <View style={[styles.root, { backgroundColor: background }]}>
+            <ScreenHeader
+                right={<HeaderButton icon="ellipsis-horizontal" label="More actions" onPress={() => setMenuOpen(true)} />}
+            />
 
-            <View style={[styles.card, { backgroundColor: colors.surface }]}>
-                <InfoRow icon="calendar-outline" label="Date" value={formatDate(task.date)} />
-                <InfoRow icon="time-outline" label="Time" value={time} />
-                <InfoRow
-                    icon="checkmark-circle-outline"
-                    label="Status"
-                    value={task.done ? 'Completed' : isOverdue(task) ? 'Overdue' : 'Not completed'}
-                    last
-                />
-            </View>
-
-            {task.subtasks.length > 0 ? (
-                <View style={[styles.card, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        Subtasks · {doneSubtasks}/{task.subtasks.length}
+            <ScrollView
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets>
+                <Text style={[styles.tagLabel, { color: colors.primary }]}>{task.tag}</Text>
+                <View style={styles.titleRow}>
+                    <Text style={[styles.title, { color: colors.text }, task.done && styles.titleDone]}>
+                        {task.title}
                     </Text>
-                    {task.subtasks.map(s => (
-                        <View key={s.id} style={styles.subtaskRow}>
-                            <Check
-                                checked={s.done}
-                                onPress={() => toggleSubtask(task.id, s.id)}
-                                label={s.title}
-                                size={24}
-                            />
-                            <Text
-                                style={[
-                                    styles.subtaskText,
-                                    { color: s.done ? colors.textMuted : colors.text },
-                                    s.done && styles.titleDone,
-                                ]}>
-                                {s.title}
-                            </Text>
-                        </View>
-                    ))}
+                    <Pressable
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: task.done }}
+                        accessibilityLabel={`Complete ${task.title}`}
+                        hitSlop={8}
+                        onPress={() => toggleDone(task.id)}
+                        style={[
+                            styles.doneCircle,
+                            task.done
+                                ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                                : { borderColor: colors.text },
+                        ]}>
+                        {task.done ? <Ionicons name="checkmark" size={20} color={palette.linenCream} /> : null}
+                    </Pressable>
                 </View>
-            ) : null}
 
-            <Pressable
-                accessibilityRole="button"
-                onPress={() => toggleDone(task.id)}
-                style={[styles.button, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
-                    {task.done ? 'Mark as not done' : 'Mark as done'}
-                </Text>
-            </Pressable>
+                <Divider />
 
-            <Pressable
-                accessibilityRole="button"
-                onPress={() => navigation.navigate('TaskForm', { taskId: task.id })}
-                style={[styles.button, styles.secondary, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                <Ionicons name="create-outline" size={20} color={colors.text} />
-                <Text style={[styles.buttonText, { color: colors.text }]}>Edit task</Text>
-            </Pressable>
+                <SectionTitle>Date & Time</SectionTitle>
+                <Pill icon="calendar-outline" text={formatDate(task.date)} />
+                <View style={styles.timeRow}>
+                    <Pill text={task.start} style={styles.timePill} />
+                    {task.end ? <Pill text={task.end} style={styles.timePill} /> : null}
+                </View>
 
-            <Pressable accessibilityRole="button" onPress={confirmDelete} style={styles.deleteButton}>
-                <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                <Text style={[styles.deleteText, { color: colors.danger }]}>Delete task</Text>
-            </Pressable>
-        </ScrollView>
+                <Divider />
+
+                <PropertyRow label="Status">
+                    <Chip text={status.text} bg={status.bg} fg={status.fg} />
+                </PropertyRow>
+                <PropertyRow label="Priority">
+                    <Chip
+                        text={PRIORITY_LABEL[task.priority]}
+                        bg={PRIORITY_COLOR[task.priority]}
+                        fg={palette.bistre}
+                    />
+                </PropertyRow>
+                <PropertyRow label="Tags">
+                    <Chip text={task.tag} bg={palette.subtlePurple} fg={colors.text} />
+                    {task.outdoor ? (
+                        <Chip text="Outdoor" bg={colors.success} fg={colors.onSuccess} icon="partly-sunny-outline" />
+                    ) : null}
+                </PropertyRow>
+
+                {task.subtasks.length > 0 ? (
+                    <>
+                        <Divider />
+                        <SectionTitle right={`${doneSubtasks}/${task.subtasks.length}`}>Subtasks</SectionTitle>
+                        <View style={styles.subtasks}>
+                            {task.subtasks.map(s => (
+                                <View
+                                    key={s.id}
+                                    style={[
+                                        styles.subtaskRow,
+                                        { backgroundColor: colors.surface, borderColor: colors.border },
+                                    ]}>
+                                    <Check
+                                        checked={s.done}
+                                        onPress={() => toggleSubtask(task.id, s.id)}
+                                        label={s.title}
+                                        size={24}
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.subtaskText,
+                                            { color: s.done ? colors.textMuted : colors.text },
+                                            s.done && styles.titleDone,
+                                        ]}>
+                                        {s.title}
+                                    </Text>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Remove ${s.title}`}
+                                        hitSlop={8}
+                                        onPress={() => removeSubtask(s.id)}>
+                                        <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+                                    </Pressable>
+                                </View>
+                            ))}
+                            <AddSubtaskRow bordered onAdd={addSubtask} />
+                        </View>
+                    </>
+                ) : (
+                    <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
+                        <AddSubtaskRow onAdd={addSubtask} />
+                    </View>
+                )}
+
+                <Pressable accessibilityRole="button" onPress={confirmDelete} style={styles.deleteButton}>
+                    <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                    <Text style={[styles.deleteText, { color: colors.danger }]}>Delete task</Text>
+                </Pressable>
+            </ScrollView>
+
+            <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={closeMenu}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu}>
+                    <View
+                        style={[
+                            styles.menu,
+                            { top: menuTop, backgroundColor: colors.surface, borderColor: colors.border },
+                        ]}>
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => {
+                                closeMenu();
+                                toggleDone(task.id);
+                            }}
+                            style={styles.menuItem}>
+                            <Ionicons
+                                name={task.done ? 'arrow-undo-outline' : 'checkmark-circle-outline'}
+                                size={20}
+                                color={colors.text}
+                            />
+                            <Text style={[styles.menuText, { color: colors.text }]}>
+                                {task.done ? 'Mark as not done' : 'Mark as done'}
+                            </Text>
+                        </Pressable>
+                        <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => {
+                                closeMenu();
+                                navigation.navigate('TaskForm', { taskId: task.id });
+                            }}
+                            style={styles.menuItem}>
+                            <Ionicons name="create-outline" size={20} color={colors.text} />
+                            <Text style={[styles.menuText, { color: colors.text }]}>Edit task</Text>
+                        </Pressable>
+                    </View>
+                </Pressable>
+            </Modal>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     root: { flex: 1 },
-    content: { padding: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.md },
+    content: {
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.md,
+        paddingBottom: spacing.xl * 2,
+    },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
     notFound: { fontSize: fontSize.body },
-    hero: { borderRadius: 24, padding: spacing.lg, gap: spacing.md },
-    heroTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    title: { flex: 1, fontSize: fontSize.title, fontWeight: '700', color: INK },
+
+    tagLabel: { fontSize: fontSize.body, fontWeight: '600' },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.xs },
+    title: { flex: 1, fontSize: fontSize.display - 4, fontWeight: '700' },
     titleDone: { textDecorationLine: 'line-through' },
-    badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-    badge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+    doneCircle: {
+        width: 32,
+        height: 32,
         borderRadius: radius.pill,
-        backgroundColor: CHIP_BG,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: spacing.sm,
     },
-    badgeText: { fontSize: fontSize.caption, color: INK_MUTED },
-    card: { borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-    infoRow: {
+    divider: { height: StyleSheet.hairlineWidth, marginVertical: spacing.lg },
+
+    sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        paddingVertical: spacing.md,
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
     },
-    infoLabel: { fontSize: fontSize.body, width: 64 },
-    infoValue: { flex: 1, fontSize: fontSize.body, fontWeight: '500', textAlign: 'right' },
-    sectionTitle: { fontSize: fontSize.body, fontWeight: '700', paddingVertical: spacing.md },
-    subtaskRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        paddingBottom: spacing.md,
-    },
-    subtaskText: { flex: 1, fontSize: fontSize.body },
-    button: {
+    sectionTitle: { fontSize: fontSize.body, fontWeight: '700' },
+    sectionRight: { fontSize: fontSize.body, fontWeight: '600' },
+
+    pill: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
-        paddingVertical: spacing.lg,
+        minHeight: 52,
+        paddingHorizontal: spacing.lg,
+        borderRadius: radius.pill,
+        borderWidth: 1,
+    },
+    pillText: { fontSize: fontSize.body, fontWeight: '600' },
+    timeRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
+    timePill: { flex: 1 },
+
+    propRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: spacing.sm,
+        minHeight: 48,
+    },
+    propLabel: { fontSize: fontSize.body },
+    propValue: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: spacing.sm },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: spacing.md + 2,
+        paddingVertical: spacing.sm - 1,
         borderRadius: radius.pill,
     },
-    secondary: { borderWidth: 1 },
-    buttonText: { fontSize: fontSize.body, fontWeight: '700' },
+    chipText: { fontSize: fontSize.body - 2, fontWeight: '600' },
+
+    subtasks: { gap: spacing.sm },
+    subtaskRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        minHeight: 52,
+        paddingHorizontal: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: 1,
+    },
+    subtaskText: { flex: 1, fontSize: fontSize.body },
+
+    addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    squareBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2 },
+    addInput: { flex: 1, fontSize: fontSize.body, paddingVertical: spacing.md },
+
+    emptyCard: {
+        marginTop: spacing.lg,
+        borderRadius: radius.lg + 8,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.md,
+    },
+
     deleteButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
         paddingVertical: spacing.lg,
+        marginTop: spacing.xl,
     },
     deleteText: { fontSize: fontSize.body, fontWeight: '600' },
+
+    menu: {
+        position: 'absolute',
+        right: spacing.lg,
+        minWidth: 210,
+        borderRadius: radius.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        shadowColor: palette.bistre,
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 8,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        minHeight: 48,
+        paddingHorizontal: spacing.lg,
+    },
+    menuText: { fontSize: fontSize.body, fontWeight: '500' },
+    menuDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: spacing.md },
 });
