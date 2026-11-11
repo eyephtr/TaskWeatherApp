@@ -1,5 +1,5 @@
-import { buildWeatherUrl, fetchWeather, parseWeather, type FetchLike } from '../src/services/weatherApi';
-import { bangkok, rawResponse } from '../src/test-utils/weatherFixtures';
+import { buildWeatherUrl, fetchWeather, parseWeather, type FetchLike } from '../../src/services/weatherApi';
+import { bangkok, rawResponse } from '../../src/test-utils/weatherFixtures';
 
 const respond = (body: unknown, ok = true, status = 200): FetchLike =>
     async () => ({ ok, status, json: async () => body });

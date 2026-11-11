@@ -1,5 +1,5 @@
-import { hasErrors, isValidDate, validateTaskInput } from '../src/utils/taskValidation';
-import type { TaskInput } from '../src/types/task';
+import { hasErrors, isValidDate, validateTaskInput } from '../../src/utils/taskValidation';
+import type { TaskInput } from '../../src/types/task';
 
 const valid: TaskInput = {
     title: 'Write report',

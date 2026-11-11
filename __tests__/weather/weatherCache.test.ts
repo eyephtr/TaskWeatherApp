@@ -1,6 +1,6 @@
-import { createWeatherCache } from '../src/storage/weatherCache';
-import { createMemoryKv } from '../src/test-utils/memoryKv';
-import { bangkok, chiangMai, makeWeather } from '../src/test-utils/weatherFixtures';
+import { createWeatherCache } from '../../src/storage/weatherCache';
+import { createMemoryKv } from '../../src/test-utils/memoryKv';
+import { bangkok, chiangMai, makeWeather } from '../../src/test-utils/weatherFixtures';
 
 describe('weather cache', () => {
     it('round-trips data for a location', async () => {

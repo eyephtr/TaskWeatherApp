@@ -1,6 +1,6 @@
-import { filterTasks, matchesQuery } from '../src/utils/taskFilters';
-import { sortByDateTime, sortByStart } from '../src/utils/taskSelectors';
-import type { Task } from '../src/types/task';
+import { filterTasks, matchesQuery } from '../../src/utils/taskFilters';
+import { sortByDateTime, sortByStart } from '../../src/utils/taskSelectors';
+import type { Task } from '../../src/types/task';
 
 const make = (over: Partial<Task>): Task => ({
     id: 'x',

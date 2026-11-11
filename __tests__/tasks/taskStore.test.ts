@@ -1,7 +1,7 @@
-import { createTaskStore } from '../src/store/taskStore';
-import { createTaskRepository } from '../src/storage/taskRepository';
-import { createMemoryKv } from '../src/test-utils/memoryKv';
-import type { TaskInput } from '../src/types/task';
+import { createTaskStore } from '../../src/store/taskStore';
+import { createTaskRepository } from '../../src/storage/taskRepository';
+import { createMemoryKv } from '../../src/test-utils/memoryKv';
+import type { TaskInput } from '../../src/types/task';
 
 const input: TaskInput = {
     title: 'Buy milk',

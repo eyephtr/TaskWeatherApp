@@ -1,5 +1,5 @@
-import { describeWeather, isRainCode } from '../src/services/weatherCodes';
-import { isFresh } from '../src/utils/cache';
+import { describeWeather, isRainCode } from '../../src/services/weatherCodes';
+import { isFresh } from '../../src/utils/cache';
 
 describe('describeWeather', () => {
     it('describes clear weather differently by day and night', () => {

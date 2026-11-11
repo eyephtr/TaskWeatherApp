@@ -1,5 +1,5 @@
-import { isOverdue, taskDeadline } from '../src/utils/taskStatus';
-import type { Task } from '../src/types/task';
+import { isOverdue, taskDeadline } from '../../src/utils/taskStatus';
+import type { Task } from '../../src/types/task';
 
 const make = (over: Partial<Task> = {}): Task => ({
     id: 'x',
