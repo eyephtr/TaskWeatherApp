@@ -17,6 +17,8 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     const insets = useSafeAreaInsets();
 
     const isTasksTab = state.routes[state.index]?.name === 'Tasks';
+    const tasksRoute = state.routes.find(r => r.name === 'Tasks');
+    const isFormOpen = isTasksTab && (tasksRoute?.params as { formOpen?: boolean } | undefined)?.formOpen === true;
 
     // Animate the bar width/padding based on whether FAB is showing
     const animValue = useRef(new Animated.Value(isTasksTab ? 1 : 0)).current;
@@ -27,15 +29,15 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
         }).start();
     }, [isTasksTab]);
 
+    // ตอนไม่มี FAB: bar มี margin สองข้างทำให้ดูอยู่กลาง
+    // ตอนมี FAB: margin = 0 bar ขยายเต็มพื้นที่ที่เหลือ (flex:1 เสมอ)
+    const barMargin = animValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [spacing.xl * 3, 0],
+    });
     const barStyle = {
-        paddingHorizontal: animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: [spacing.xl * 2, spacing.xs + 2],
-        }),
-        alignSelf: animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['center', 'stretch'],
-        }) as any,
+        marginHorizontal: barMargin,
+        flex: 1,
     };
 
     return (
@@ -85,12 +87,30 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
             {isTasksTab ? (
                 <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Add task"
-                    onPress={() => navigation.navigate('Tasks', { flip: Date.now() })}
-                    style={[styles.fab, { backgroundColor: colors.primary }]}>
+                    accessibilityLabel={isFormOpen ? 'Close' : 'Add task'}
+                    onPress={() => {
+                        if (isFormOpen) {
+                            // close: setParams formOpen=false via Tasks tab
+                            navigation.navigate('Tasks', { formOpen: false });
+                        } else {
+                            navigation.navigate('Tasks', { flip: Date.now() });
+                        }
+                    }}
+                    style={[styles.fab, { backgroundColor: isFormOpen ? colors.text : colors.primary }]}>
                     <View style={styles.plus}>
-                        <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
-                        <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
+                        {isFormOpen ? (
+                            // × icon
+                            <>
+                                <View style={[styles.plusBar, styles.plusDiag1, { backgroundColor: palette.linenCream }]} />
+                                <View style={[styles.plusBar, styles.plusDiag2, { backgroundColor: palette.linenCream }]} />
+                            </>
+                        ) : (
+                            // + icon
+                            <>
+                                <View style={[styles.plusBar, styles.plusHorizontal, { backgroundColor: palette.linenCream }]} />
+                                <View style={[styles.plusBar, styles.plusVertical, { backgroundColor: palette.linenCream }]} />
+                            </>
+                        )}
                     </View>
                 </Pressable>
             ) : null}
@@ -108,10 +128,10 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
     bar: {
-        // flex:1 removed — controlled by animated barStyle
         flexDirection: 'row',
         height: BAR_HEIGHT,
         paddingVertical: spacing.xs + 2,
+        paddingHorizontal: spacing.xs + 2,
         borderRadius: radius.pill,
         borderWidth: StyleSheet.hairlineWidth,
         shadowColor: palette.bistre,
@@ -151,4 +171,6 @@ const styles = StyleSheet.create({
     plusBar: { position: 'absolute', borderRadius: PLUS_THICKNESS / 2 },
     plusHorizontal: { width: PLUS_SIZE, height: PLUS_THICKNESS },
     plusVertical: { width: PLUS_THICKNESS, height: PLUS_SIZE },
+    plusDiag1: { width: PLUS_SIZE, height: PLUS_THICKNESS, transform: [{ rotate: '45deg' }] },
+    plusDiag2: { width: PLUS_SIZE, height: PLUS_THICKNESS, transform: [{ rotate: '-45deg' }] },
 });

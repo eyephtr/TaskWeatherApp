@@ -17,6 +17,7 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 
 import type { Priority, SubtaskInput, TaskInput, ValidationErrors } from '../../types/task';
@@ -30,17 +31,9 @@ import { useTaskStore } from '../../store/useTaskStore';
 import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../../utils/taskValidation';
 
-// ─── Helper components ───────────────────────────────────────────────────────
+// ─── Helper components ────────────────────────────────────────────────────────
 
-function Field({
-    label,
-    error,
-    children,
-}: {
-    label: string;
-    error?: string;
-    children: React.ReactNode;
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
     const { colors } = useTheme();
     return (
         <View style={formStyles.field}>
@@ -61,83 +54,85 @@ function PickerRow({ label, children }: { label: string; children: React.ReactNo
     );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ─── Rings (notebook spiral) ──────────────────────────────────────────────────
 
-interface Props {
+function Rings() {
+    const { colors } = useTheme();
+    return (
+        <View style={styles.rings} pointerEvents="none">
+            {Array.from({ length: 5 }).map((_, i) => (
+                <View key={i} style={[styles.ring, { backgroundColor: colors.ring }]} />
+            ))}
+        </View>
+    );
+}
+
+// ─── Front face (plain NotebookCard appearance) ───────────────────────────────
+
+interface FrontProps {
     title: string;
     subtitle?: string;
     style?: StyleProp<ViewStyle>;
     children: React.ReactNode;
-    isFlipped: boolean;
-    onFlipBack: () => void;
+}
+
+export function NotebookCardFront({ title, subtitle, style, children }: FrontProps) {
+    const { colors } = useTheme();
+    return (
+        <View style={[styles.card, { backgroundColor: colors.surface }, style]}>
+            <Rings />
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            {subtitle ? (
+                <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+            ) : null}
+            {children}
+        </View>
+    );
+}
+
+// ─── Back face (add task form, shown full-screen as overlay) ──────────────────
+
+interface BackProps {
+    isVisible: boolean;
+    onClose: () => void;
     initialDate?: string;
 }
 
-export default function FlippableNotebookCard({
-    title,
-    subtitle,
-    style,
-    children,
-    isFlipped,
-    onFlipBack,
-    initialDate,
-}: Props) {
+export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
     const { colors, isDark } = useTheme();
 
-    // ─── Animation ──────────────────────────────────────────────────────────
-    const rotate = useSharedValue(0); // 0 = front, 1 = back
-    const scale = useSharedValue(1);
-    const translateY = useSharedValue(0);
+    // Animation values
+    const progress = useSharedValue(0); // 0=hidden, 1=visible
 
     useEffect(() => {
-        if (isFlipped) {
-            rotate.value = withSpring(1, { damping: 14, stiffness: 100 });
-            scale.value = withSpring(1.03, { damping: 14, stiffness: 100 });
-            translateY.value = withSpring(-8, { damping: 14, stiffness: 100 });
-        } else {
-            rotate.value = withSpring(0, { damping: 14, stiffness: 100 });
-            scale.value = withSpring(1, { damping: 14, stiffness: 100 });
-            translateY.value = withSpring(0, { damping: 14, stiffness: 100 });
-        }
-    }, [isFlipped]);
+        progress.value = isVisible
+            ? withSpring(1, { damping: 16, stiffness: 120 })
+            : withTiming(0, { duration: 220 });
+    }, [isVisible]);
 
-    // Container wraps both sides and applies scale/translateY
-    const containerStyle = useAnimatedStyle(() => ({
-        transform: [
-            { scaleX: scale.value },
-            { scaleY: scale.value },
-            { translateY: translateY.value },
-        ],
+    // Backdrop fade
+    const backdropStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(progress.value, [0, 1], [0, 0.6]),
+        pointerEvents: progress.value > 0 ? 'auto' : 'none',
     }));
 
-    // Front: 0→180
-    const frontStyle = useAnimatedStyle(() => {
-        const rotateY = interpolate(rotate.value, [0, 1], [0, 180]);
-        return {
-            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
-            backfaceVisibility: 'hidden',
-        };
-    });
+    // Card: starts at bottom, slides up + scales in
+    const cardAnimStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: interpolate(progress.value, [0, 1], [80, 0]) },
+            { scale: interpolate(progress.value, [0, 1], [0.92, 1]) },
+        ],
+        opacity: interpolate(progress.value, [0, 0.3], [0, 1]),
+    }));
 
-    // Back: -180→0
-    const backStyle = useAnimatedStyle(() => {
-        const rotateY = interpolate(rotate.value, [0, 1], [-180, 0]);
-        return {
-            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
-            backfaceVisibility: 'hidden',
-        };
-    });
-
-    // ─── Form state ─────────────────────────────────────────────────────────
+    // ─── Form state ──────────────────────────────────────────────────────────
     const addTask = useTaskStore(s => s.addTask);
-    const savedRef = useRef<boolean>(false);
-
-    const defaultDate = initialDate ?? toDateString(new Date());
+    const savedRef = useRef(false);
 
     const [formTitle, setFormTitle] = useState('');
     const [tag, setTag] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
-    const [date, setDate] = useState(defaultDate);
+    const [date, setDate] = useState(initialDate ?? toDateString(new Date()));
     const [start, setStart] = useState('09:00');
     const [end, setEnd] = useState<string | null>(null);
     const [outdoor, setOutdoor] = useState(false);
@@ -145,9 +140,14 @@ export default function FlippableNotebookCard({
     const [newSubtask, setNewSubtask] = useState('');
     const [errors, setErrors] = useState<ValidationErrors>({});
 
-    // Reset form when card flips back to front
+    // Sync date when initialDate changes
     useEffect(() => {
-        if (!isFlipped) {
+        if (initialDate) setDate(initialDate);
+    }, [initialDate]);
+
+    // Reset form when overlay is closed
+    useEffect(() => {
+        if (!isVisible) {
             savedRef.current = false;
             setFormTitle('');
             setTag('');
@@ -160,14 +160,7 @@ export default function FlippableNotebookCard({
             setNewSubtask('');
             setErrors({});
         }
-    }, [isFlipped]);
-
-    // Update date if initialDate changes while flipped
-    useEffect(() => {
-        if (initialDate) {
-            setDate(initialDate);
-        }
-    }, [initialDate]);
+    }, [isVisible]);
 
     const clearError = (key: keyof ValidationErrors) =>
         setErrors(prev => ({ ...prev, [key]: undefined }));
@@ -195,14 +188,10 @@ export default function FlippableNotebookCard({
         const result = addTask(input);
         if (result.ok) {
             savedRef.current = true;
-            onFlipBack();
+            onClose();
             return;
         }
         setErrors(result.errors);
-    };
-
-    const handleCancel = () => {
-        onFlipBack();
     };
 
     const inputStyle = (hasError: boolean) => [
@@ -215,29 +204,18 @@ export default function FlippableNotebookCard({
     ];
     const pickerTheme = isDark ? 'dark' : 'light';
 
-    // ─── Rings (shared visual element) ───────────────────────────────────────
-    const Rings = () => (
-        <View style={styles.rings} pointerEvents="none">
-            {Array.from({ length: 5 }).map((_, i) => (
-                <View key={i} style={[styles.ring, { backgroundColor: colors.ring }]} />
-            ))}
-        </View>
-    );
+    if (!isVisible && progress.value === 0) return null;
 
     return (
-        <Animated.View style={[style, containerStyle]}>
-            {/* ── FRONT ── */}
-            <Animated.View style={[styles.card, { backgroundColor: colors.surface }, frontStyle]}>
-                <Rings />
-                <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-                {subtitle ? (
-                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
-                ) : null}
-                {children}
+        // Absolutely covers the entire screen (positioned by TaskListScreen)
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {/* Backdrop */}
+            <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
             </Animated.View>
 
-            {/* ── BACK ── */}
-            <Animated.View style={[styles.card, styles.cardBack, { backgroundColor: colors.surface }, backStyle]}>
+            {/* Card */}
+            <Animated.View style={[styles.overlayCard, { backgroundColor: colors.surface }, cardAnimStyle]}>
                 <Rings />
                 <Text style={[styles.title, { color: colors.text }]}>New Task</Text>
 
@@ -251,10 +229,7 @@ export default function FlippableNotebookCard({
                         <TextInput
                             accessibilityLabel="Task title"
                             value={formTitle}
-                            onChangeText={t => {
-                                setFormTitle(t);
-                                clearError('title');
-                            }}
+                            onChangeText={t => { setFormTitle(t); clearError('title'); }}
                             placeholder="What needs to be done?"
                             placeholderTextColor={colors.textMuted}
                             maxLength={TITLE_MAX}
@@ -293,10 +268,7 @@ export default function FlippableNotebookCard({
                                 display="compact"
                                 locale="en-GB"
                                 themeVariant={pickerTheme}
-                                onValueChange={(_, d) => {
-                                    setDate(toDateString(d));
-                                    clearError('date');
-                                }}
+                                onValueChange={(_, d) => { setDate(toDateString(d)); clearError('date'); }}
                             />
                         </PickerRow>
                         <DateTimePicker
@@ -304,10 +276,7 @@ export default function FlippableNotebookCard({
                             mode="time"
                             display="compact"
                             themeVariant={pickerTheme}
-                            onValueChange={(_, d) => {
-                                setStart(toTimeString(d));
-                                clearError('start');
-                            }}
+                            onValueChange={(_, d) => { setStart(toTimeString(d)); clearError('start'); }}
                         />
                         {end === null ? (
                             <Pressable
@@ -325,19 +294,13 @@ export default function FlippableNotebookCard({
                                         mode="time"
                                         display="compact"
                                         themeVariant={pickerTheme}
-                                        onValueChange={(_, d) => {
-                                            setEnd(toTimeString(d));
-                                            clearError('end');
-                                        }}
+                                        onValueChange={(_, d) => { setEnd(toTimeString(d)); clearError('end'); }}
                                     />
                                     <Pressable
                                         accessibilityRole="button"
                                         accessibilityLabel="Remove end time"
                                         hitSlop={8}
-                                        onPress={() => {
-                                            setEnd(null);
-                                            clearError('end');
-                                        }}>
+                                        onPress={() => { setEnd(null); clearError('end'); }}>
                                         <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                                     </Pressable>
                                 </View>
@@ -349,10 +312,7 @@ export default function FlippableNotebookCard({
                         <TextInput
                             accessibilityLabel="Task tag"
                             value={tag}
-                            onChangeText={t => {
-                                setTag(t);
-                                clearError('tag');
-                            }}
+                            onChangeText={t => { setTag(t); clearError('tag'); }}
                             placeholder="General"
                             placeholderTextColor={colors.textMuted}
                             maxLength={TAG_MAX + 10}
@@ -360,8 +320,7 @@ export default function FlippableNotebookCard({
                         />
                     </Field>
 
-                    <View
-                        style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <View style={formStyles.switchText}>
                             <Text style={[formStyles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
                             <Text style={[formStyles.hint, { color: colors.textMuted }]}>
@@ -418,16 +377,17 @@ export default function FlippableNotebookCard({
                         <Text style={[formStyles.saveText, { color: colors.onPrimary }]}>Add task</Text>
                     </Pressable>
 
-                    <Pressable accessibilityRole="button" onPress={handleCancel} style={formStyles.cancel}>
+                    <Pressable accessibilityRole="button" onPress={onClose} style={formStyles.cancel}>
                         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>Cancel</Text>
                     </Pressable>
                 </ScrollView>
             </Animated.View>
-        </Animated.View>
+        </View>
     );
 }
 
-// ─── Card shell styles (mirrors NotebookCard) ────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
     rings: {
         position: 'absolute',
@@ -455,14 +415,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowOffset: { width: 4, height: 4 },
         elevation: 6,
-        // Both sides must fill the same space — back is absolute so they overlap
-    },
-    cardBack: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
     },
     title: { fontSize: fontSize.body + 2, fontWeight: '700', textAlign: 'center' },
     subtitle: {
@@ -471,9 +423,26 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         marginBottom: spacing.md,
     },
+    backdrop: {
+        backgroundColor: '#000',
+    },
+    overlayCard: {
+        position: 'absolute',
+        left: spacing.lg,
+        right: spacing.lg,
+        top: spacing.xl * 2,
+        bottom: spacing.xl,
+        borderRadius: radius.lg,
+        paddingTop: spacing.xl + spacing.md,
+        paddingHorizontal: spacing.lg,
+        shadowColor: palette.bistre,
+        shadowOpacity: 0.35,
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 24,
+        elevation: 16,
+    },
 });
 
-// ─── Form-specific styles ────────────────────────────────────────────────────
 const formStyles = StyleSheet.create({
     content: { paddingTop: spacing.sm, paddingBottom: spacing.xl * 2 },
     field: { marginBottom: spacing.lg, gap: spacing.sm },

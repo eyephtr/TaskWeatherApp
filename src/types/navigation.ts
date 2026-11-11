@@ -1,7 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type TabParamList = {
-    Tasks: { flip?: number } | undefined;
+    Tasks: { flip?: number; formOpen?: boolean } | undefined;
     Weather: undefined;
     Settings: undefined;
 };

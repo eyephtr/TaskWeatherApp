@@ -23,7 +23,7 @@ import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 
-import FlippableNotebookCard from '../components/task/FlippableNotebookCard';
+import { NotebookCardFront, AddTaskOverlay } from '../components/task/FlippableNotebookCard';
 import AgendaItem from '../components/task/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/task/WeekStrip';
 import IconSegmentedControl, { type SegmentOption } from '../components/common/IconSegmentedControl';
@@ -55,6 +55,7 @@ export default function TaskListScreen() {
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const tabNavigation = useNavigation<import('@react-navigation/bottom-tabs').BottomTabNavigationProp<TabParamList>>();
     const route = useRoute<BottomTabScreenProps<TabParamList, 'Tasks'>['route']>();
 
     const today = useMemo(() => toDateString(new Date()), []);
@@ -81,12 +82,20 @@ export default function TaskListScreen() {
 
     const tasksByDate = useMemo(() => groupByDate(allTasks), [allTasks]);
 
-    // Flip card when FAB is pressed from FloatingTabBar
     useEffect(() => {
         if (route.params?.flip) {
             setIsFlipped(true);
         }
-    }, [route.params?.flip]);
+        // ปิด overlay เมื่อ FAB (×) กด formOpen: false
+        if (route.params?.formOpen === false && isFlipped) {
+            setIsFlipped(false);
+        }
+    }, [route.params?.flip, route.params?.formOpen]);
+
+    // Sync formOpen state back to route params so FloatingTabBar can read it
+    useEffect(() => {
+        tabNavigation.setParams({ formOpen: isFlipped });
+    }, [isFlipped]);
 
     useEffect(() => {
         setVisibleMonth(monthStartOf(calendarStart));
@@ -282,13 +291,7 @@ export default function TaskListScreen() {
                 </View>
             )}
 
-            <FlippableNotebookCard
-                title={title}
-                subtitle={subtitle}
-                style={styles.note}
-                isFlipped={isFlipped}
-                onFlipBack={() => setIsFlipped(false)}
-                initialDate={selected}>
+            <NotebookCardFront title={title} subtitle={subtitle} style={styles.note}>
                 {error ? (
                     <StatusBanner title={error} actionLabel="OK" onAction={clearError} />
                 ) : null}
@@ -323,7 +326,12 @@ export default function TaskListScreen() {
                         </ScrollView>
                     </>
                 )}
-            </FlippableNotebookCard>
+            </NotebookCardFront>
+            <AddTaskOverlay
+                isVisible={isFlipped}
+                onClose={() => setIsFlipped(false)}
+                initialDate={selected}
+            />
         </View>
     );
 }
