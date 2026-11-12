@@ -22,12 +22,15 @@ import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import { PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
 
 import { useTaskStore } from '../store/useTaskStore';
+import { useWeatherStore } from '../store/useWeatherStore';
 
 import Check from '../components/task/Check';
 import ScreenHeader, { HEADER_BUTTON_SIZE, HeaderButton } from '../components/common/ScreenHeader';
+import StatusBanner from '../components/common/StatusBanner';
 
 import { formatDate } from '../utils/date';
 import { isOverdue } from '../utils/taskStatus';
+import { getWeatherWarning } from '../utils/weatherWarning';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -131,6 +134,8 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
 
     const [menuOpen, setMenuOpen] = useState(false);
 
+    const forecast = useWeatherStore(s => s.data?.daily);
+
     if (!task) {
         return (
             <View style={[styles.center, { backgroundColor: background }]}>
@@ -143,6 +148,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
     }
 
     const overdue = isOverdue(task);
+    const warning = getWeatherWarning(task, forecast);
     const status = task.done
         ? { text: 'Completed', bg: colors.success, fg: colors.onSuccess }
         : overdue
@@ -202,6 +208,11 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                 automaticallyAdjustKeyboardInsets>
                 <Text style={[styles.tagLabel, { color: colors.primary }]}>{task.tag}</Text>
                 <View style={styles.titleRow}>
+                    {warning ? (
+                        <View style={styles.warning}>
+                            <StatusBanner title={warning.label} message={warning.message} />
+                        </View>
+                    ) : null}
                     <Text style={[styles.title, { color: colors.text }, task.done && styles.titleDone]}>
                         {task.title}
                     </Text>
@@ -462,4 +473,5 @@ const styles = StyleSheet.create({
     },
     menuText: { fontSize: fontSize.body, fontWeight: '500' },
     menuDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: spacing.md },
+    warning: { marginTop: spacing.lg },
 });

@@ -79,7 +79,6 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const [newSubtask, setNewSubtask] = useState('');
     const [errors, setErrors] = useState<ValidationErrors>({});
 
-    // กันกดบันทึกซ้ำระหว่างที่หน้ากำลังปิด (ไม่ให้เกิดงานซ้ำ)
     const savedRef = useRef(false);
 
     if (taskId && !existing) {
