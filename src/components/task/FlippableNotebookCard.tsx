@@ -106,8 +106,8 @@ export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
 
     useEffect(() => {
         progress.value = isVisible
-            ? withSpring(1, { damping: 16, stiffness: 120 })
-            : withTiming(0, { duration: 220 });
+            ? withSpring(1, { damping: 20, stiffness: 120, overshootClamping: true })
+            : withTiming(0, { duration: 200 });
     }, [isVisible]);
 
     // Backdrop fade
@@ -205,8 +205,6 @@ export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
         },
     ];
     const pickerTheme = isDark ? 'dark' : 'light';
-
-    if (!isVisible && progress.value === 0) return null;
 
     return (
         // Absolutely covers the entire screen (positioned by TaskListScreen)
