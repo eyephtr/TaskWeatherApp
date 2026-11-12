@@ -20,7 +20,7 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     const tasksRoute = state.routes.find(r => r.name === 'Tasks');
     const isFormOpen = isTasksTab && (tasksRoute?.params as { formOpen?: boolean } | undefined)?.formOpen === true;
 
-    // Animate the bar width/padding based on whether FAB is showing
+    // Animate bar margin based on whether FAB is showing
     const animValue = useRef(new Animated.Value(isTasksTab ? 1 : 0)).current;
     useEffect(() => {
         Animated.spring(animValue, {
@@ -28,6 +28,17 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
             useNativeDriver: false,
         }).start();
     }, [isTasksTab]);
+
+    // Slide tab bar down + fade when form is open
+    const formAnim = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+        Animated.spring(formAnim, {
+            toValue: isFormOpen ? 1 : 0,
+            useNativeDriver: true,
+            damping: 18,
+            stiffness: 120,
+        }).start();
+    }, [isFormOpen]);
 
     // ตอนไม่มี FAB: bar มี margin สองข้างทำให้ดูอยู่กลาง
     // ตอนมี FAB: margin = 0 bar ขยายเต็มพื้นที่ที่เหลือ (flex:1 เสมอ)
@@ -41,9 +52,16 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     };
 
     return (
-        <View
+        <Animated.View
             pointerEvents="box-none"
-            style={[styles.wrap, { bottom: Math.max(insets.bottom - spacing.md, spacing.sm) }]}>
+            style={[
+                styles.wrap,
+                { bottom: Math.max(insets.bottom - spacing.md, spacing.sm) },
+                {
+                    transform: [{ translateY: formAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 100] }) }],
+                    opacity: formAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+                },
+            ]}>
             <Animated.View style={[styles.bar, { backgroundColor: palette.bistre, borderColor: palette.bistre }, barStyle]}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
@@ -114,7 +132,7 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                     </View>
                 </Pressable>
             ) : null}
-        </View>
+        </Animated.View>
     );
 }
 

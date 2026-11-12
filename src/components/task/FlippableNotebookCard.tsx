@@ -116,13 +116,15 @@ export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
         pointerEvents: progress.value > 0 ? 'auto' : 'none',
     }));
 
-    // Card: starts at bottom, slides up + scales in
+    // Card: flips in (rotateY) + scales up + slides up from slightly below
     const cardAnimStyle = useAnimatedStyle(() => ({
         transform: [
-            { translateY: interpolate(progress.value, [0, 1], [80, 0]) },
-            { scale: interpolate(progress.value, [0, 1], [0.92, 1]) },
+            { perspective: 1200 },
+            { rotateY: `${interpolate(progress.value, [0, 1], [-90, 0])}deg` },
+            { translateY: interpolate(progress.value, [0, 1], [40, 0]) },
+            { scale: interpolate(progress.value, [0, 1], [0.95, 1]) },
         ],
-        opacity: interpolate(progress.value, [0, 0.3], [0, 1]),
+        opacity: interpolate(progress.value, [0, 0.4], [0, 1]),
     }));
 
     // ─── Form state ──────────────────────────────────────────────────────────
