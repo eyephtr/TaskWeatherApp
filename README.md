@@ -59,11 +59,11 @@ npm run lint
 src/
 ├── components/
 │   ├── common/          # UI components ที่ใช้ร่วมกันทั้งแอป
-│   │                    #   EmptyState, FloatingTabBar, IconSegmentedControl,
-│   │                    #   ScreenHeader, Skeleton, StatusBanner
+│   │                    #   AppErrorBoundary, EmptyState, FloatingTabBar,
+│   │                    #   IconSegmentedControl, ScreenHeader, Skeleton, StatusBanner
 │   ├── task/            # Components เฉพาะฟีเจอร์ Task
-│   │                    #   AgendaItem, Check, NotebookCard, SearchBar,
-│   │                    #   StatusFilter, WeekStrip
+│   │                    #   AgendaItem, Check, FlippableNotebookCard, NotebookCard,
+│   │                    #   SearchBar, StatusFilter, WeekStrip
 │   └── weather/         # Components เฉพาะฟีเจอร์ Weather
 │                        #   CurrentWeatherCard, ForecastCard, WeatherSkeleton
 │
@@ -72,7 +72,7 @@ src/
 │
 ├── screens/
 │   ├── TaskListScreen.tsx     # หน้าหลัก — แสดงรายการ task แบบ agenda + calendar strip
-│   ├── TaskFormScreen.tsx     # หน้าสร้าง/แก้ไข task
+│   ├── TaskFormScreen.tsx     # หน้าแก้ไข task (ใช้สำหรับ edit flow เท่านั้น)
 │   ├── TaskDetailScreen.tsx   # หน้าดูรายละเอียด task
 │   ├── WeatherScreen.tsx      # หน้าพยากรณ์อากาศ (current + 7-day forecast)
 │   └── SettingsScreen.tsx     # หน้าตั้งค่า (theme ฯลฯ)
@@ -97,7 +97,7 @@ src/
 │
 ├── theme/
 │   ├── ThemeProvider.tsx    # Context + hook สำหรับ light/dark theme
-│   ├── tokens.ts            # design tokens (spacing, fontSize, radius, palette)
+│   ├── tokens.ts            # design tokens (spacing, fontSize, radius, palette, semantic colors)
 │   └── priority.ts          # สีตาม task priority
 │
 ├── types/
@@ -105,17 +105,16 @@ src/
 │   ├── weather.ts           # type WeatherData, DailyForecast, GeoLocation
 │   └── navigation.ts        # type RootStackParamList, TabParamList
 │
-├── utils/
-│   ├── date.ts              # helper สำหรับ date string (YYYY-MM-DD)
-│   ├── time.ts              # helper สำหรับ time string (HH:MM)
-│   ├── id.ts                # สร้าง unique ID
-│   ├── cache.ts             # ตรวจสอบความสดของ cache ด้วย TTL
-│   ├── taskFilters.ts       # filter task ตาม status (all/active/done)
-│   ├── taskSelectors.ts     # group/sort task สำหรับแสดงผล
-│   ├── taskStatus.ts        # ตรวจสอบสถานะ (overdue, done ฯลฯ)
-│   └── taskValidation.ts    # validate TaskInput ก่อนบันทึก
-│
-└── mock/                    # ข้อมูล mock สำหรับ development และ test
+└── utils/
+    ├── date.ts              # helper สำหรับ date string (YYYY-MM-DD)
+    ├── time.ts              # helper สำหรับ time string (HH:MM)
+    ├── id.ts                # สร้าง unique ID
+    ├── cache.ts             # ตรวจสอบความสดของ cache ด้วย TTL
+    ├── useDebounce.ts       # generic debounce hook สำหรับ input
+    ├── taskFilters.ts       # filter task ตาม status (all/active/done)
+    ├── taskSelectors.ts     # group/sort task สำหรับแสดงผล
+    ├── taskStatus.ts        # ตรวจสอบสถานะ (overdue, done ฯลฯ)
+    └── taskValidation.ts    # validate TaskInput ก่อนบันทึก
 ```
 
 ---
@@ -144,3 +143,7 @@ src/
 ### Navigation — React Navigation
 
 ใช้ `@react-navigation/native-stack` สำหรับ Stack และ `@react-navigation/bottom-tabs` สำหรับ Tab ซึ่งเป็น standard ของ React Native ecosystem มี TypeScript type สำหรับ route params แบบ end-to-end ผ่าน `RootStackParamList` และ `TabParamList`
+
+### Animation — React Native Reanimated
+
+ใช้ [Reanimated v4](https://docs.swmansion.com/react-native-reanimated/) สำหรับ animation ที่ต้องการความลื่นไหลระดับ 60fps เช่น `AddTaskOverlay` ที่ slide-up พร้อม scale และ backdrop fade เมื่อกด FAB Reanimated รัน animation บน UI thread โดยตรง ทำให้ไม่สะดุดแม้ JS thread จะยุ่งอยู่ ซึ่ง `Animated` จาก React Native core (ที่ใช้ใน `FloatingTabBar`) ก็ยังคงใช้สำหรับ animation ที่ไม่ต้องการ interactivity สูง
