@@ -6,17 +6,19 @@ import {
     Switch,
     Text,
     TextInput,
+    useWindowDimensions,
     View,
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Animated, {
+    Easing,
     interpolate,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
     withTiming,
 } from 'react-native-reanimated';
 
@@ -31,7 +33,10 @@ import { useTaskStore } from '../../store/useTaskStore';
 import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../../utils/taskValidation';
 
-// ─── Helper components ────────────────────────────────────────────────────────
+const FLIP_DURATION = 600;
+const EXPANDED_SIDE = spacing.md;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
     const { colors } = useTheme();
@@ -54,8 +59,6 @@ function PickerRow({ label, children }: { label: string; children: React.ReactNo
     );
 }
 
-// ─── Rings (notebook spiral) ──────────────────────────────────────────────────
-
 function Rings() {
     const { colors } = useTheme();
     return (
@@ -67,67 +70,18 @@ function Rings() {
     );
 }
 
-// ─── Front face (plain NotebookCard appearance) ───────────────────────────────
+// ─── Add-task form (หน้าหลังของการ์ด) ─────────────────────────────────────────
 
-interface FrontProps {
-    title: string;
-    subtitle?: string;
-    style?: StyleProp<ViewStyle>;
-    children: React.ReactNode;
-}
-
-export function NotebookCardFront({ title, subtitle, style, children }: FrontProps) {
-    const { colors } = useTheme();
-    return (
-        <View style={[styles.card, { backgroundColor: colors.surface }, style]}>
-            <Rings />
-            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-            {subtitle ? (
-                <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
-            ) : null}
-            {children}
-        </View>
-    );
-}
-
-// ─── Back face (add task form, shown full-screen as overlay) ──────────────────
-
-interface BackProps {
+function AddTaskForm({
+    isVisible,
+    onClose,
+    initialDate,
+}: {
     isVisible: boolean;
     onClose: () => void;
     initialDate?: string;
-}
-
-export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
+}) {
     const { colors, isDark } = useTheme();
-
-    // Animation values
-    const progress = useSharedValue(0); // 0=hidden, 1=visible
-
-    useEffect(() => {
-        progress.value = isVisible
-            ? withSpring(1, { damping: 20, stiffness: 120, overshootClamping: true })
-            : withTiming(0, { duration: 200 });
-    }, [isVisible]);
-
-    // Backdrop fade
-    const backdropStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(progress.value, [0, 1], [0, 0.6]),
-        pointerEvents: progress.value > 0 ? 'auto' : 'none',
-    }));
-
-    // Card: flips in (rotateY) + scales up + slides up from slightly below
-    const cardAnimStyle = useAnimatedStyle(() => ({
-        transform: [
-            { perspective: 1200 },
-            { rotateY: `${interpolate(progress.value, [0, 1], [-90, 0])}deg` },
-            { translateY: interpolate(progress.value, [0, 1], [40, 0]) },
-            { scale: interpolate(progress.value, [0, 1], [0.95, 1]) },
-        ],
-        opacity: interpolate(progress.value, [0, 0.4], [0, 1]),
-    }));
-
-    // ─── Form state ──────────────────────────────────────────────────────────
     const addTask = useTaskStore(s => s.addTask);
     const savedRef = useRef(false);
 
@@ -142,19 +96,13 @@ export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
     const [newSubtask, setNewSubtask] = useState('');
     const [errors, setErrors] = useState<ValidationErrors>({});
 
-    // Sync date when initialDate changes
     useEffect(() => {
-        if (initialDate) setDate(initialDate);
-    }, [initialDate]);
-
-    // Reset form when overlay is closed
-    useEffect(() => {
-        if (!isVisible) {
+        if (isVisible) {
             savedRef.current = false;
             setFormTitle('');
             setTag('');
             setPriority('medium');
-            setDate(initialDate ?? toDateString(new Date()));
+            setDate(toDateString(new Date()));
             setStart('09:00');
             setEnd(null);
             setOutdoor(false);
@@ -207,188 +155,315 @@ export function AddTaskOverlay({ isVisible, onClose, initialDate }: BackProps) {
     const pickerTheme = isDark ? 'dark' : 'light';
 
     return (
-        // Absolutely covers the entire screen (positioned by TaskListScreen)
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-            {/* Backdrop */}
-            <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
-            </Animated.View>
+        <>
+            <View style={styles.formHeader}>
+                <View style={styles.headerSide} />
+                <Text style={[styles.headerTitle, { color: colors.text }]}>New Task</Text>
+                <View style={[styles.headerSide, styles.headerSideRight]}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Close"
+                        hitSlop={10}
+                        onPress={onClose}
+                        style={[styles.closeButton, { backgroundColor: colors.surfaceAlt }]}>
+                        <Ionicons name="close" size={20} color={colors.text} />
+                    </Pressable>
+                </View>
+            </View>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets
+                contentContainerStyle={formStyles.content}>
+                <Field label="Title" error={errors.title}>
+                    <TextInput
+                        accessibilityLabel="Task title"
+                        value={formTitle}
+                        onChangeText={t => { setFormTitle(t); clearError('title'); }}
+                        placeholder="What needs to be done?"
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={TITLE_MAX}
+                        returnKeyType="done"
+                        style={inputStyle(!!errors.title)}
+                    />
+                </Field>
 
-            {/* Card */}
-            <Animated.View style={[styles.overlayCard, { backgroundColor: colors.surface }, cardAnimStyle]}>
-                <Rings />
-                <Text style={[styles.title, { color: colors.text }]}>New Task</Text>
-
-                <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    automaticallyAdjustKeyboardInsets
-                    contentContainerStyle={formStyles.content}>
-
-                    <Field label="Title" error={errors.title}>
-                        <TextInput
-                            accessibilityLabel="Task title"
-                            value={formTitle}
-                            onChangeText={t => { setFormTitle(t); clearError('title'); }}
-                            placeholder="What needs to be done?"
-                            placeholderTextColor={colors.textMuted}
-                            maxLength={TITLE_MAX}
-                            returnKeyType="done"
-                            style={inputStyle(!!errors.title)}
-                        />
-                    </Field>
-
-                    <Field label="Priority">
-                        <View style={formStyles.chips}>
-                            {PRIORITIES.map(p => {
-                                const active = p === priority;
-                                return (
-                                    <Pressable
-                                        key={p}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: active }}
-                                        onPress={() => setPriority(p)}
-                                        style={[
-                                            formStyles.chip,
-                                            { backgroundColor: PRIORITY_COLOR[p] },
-                                            active ? { borderColor: colors.text } : formStyles.chipInactive,
-                                        ]}>
-                                        <Text style={formStyles.chipText}>{PRIORITY_LABEL[p]}</Text>
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    </Field>
-
-                    <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
-                        <PickerRow label="Date">
-                            <DateTimePicker
-                                value={fromDateString(date)}
-                                mode="date"
-                                display="compact"
-                                locale="en-GB"
-                                themeVariant={pickerTheme}
-                                onValueChange={(_, d) => { setDate(toDateString(d)); clearError('date'); }}
-                            />
-                        </PickerRow>
-                        <DateTimePicker
-                            value={fromTimeString(start)}
-                            mode="time"
-                            display="compact"
-                            themeVariant={pickerTheme}
-                            onValueChange={(_, d) => { setStart(toTimeString(d)); clearError('start'); }}
-                        />
-                        {end === null ? (
-                            <Pressable
-                                accessibilityRole="button"
-                                onPress={() => setEnd(addMinutes(start, 60))}
-                                style={formStyles.addEnd}>
-                                <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-                                <Text style={{ color: colors.text }}>Add end time</Text>
-                            </Pressable>
-                        ) : (
-                            <PickerRow label="End">
-                                <View style={formStyles.endControls}>
-                                    <DateTimePicker
-                                        value={fromTimeString(end)}
-                                        mode="time"
-                                        display="compact"
-                                        themeVariant={pickerTheme}
-                                        onValueChange={(_, d) => { setEnd(toTimeString(d)); clearError('end'); }}
-                                    />
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Remove end time"
-                                        hitSlop={8}
-                                        onPress={() => { setEnd(null); clearError('end'); }}>
-                                        <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-                                    </Pressable>
-                                </View>
-                            </PickerRow>
-                        )}
-                    </Field>
-
-                    <Field label="Tag" error={errors.tag}>
-                        <TextInput
-                            accessibilityLabel="Task tag"
-                            value={tag}
-                            onChangeText={t => { setTag(t); clearError('tag'); }}
-                            placeholder="General"
-                            placeholderTextColor={colors.textMuted}
-                            maxLength={TAG_MAX + 10}
-                            style={inputStyle(!!errors.tag)}
-                        />
-                    </Field>
-
-                    <View style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={formStyles.switchText}>
-                            <Text style={[formStyles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
-                            <Text style={[formStyles.hint, { color: colors.textMuted }]}>
-                                Get a weather warning on this task
-                            </Text>
-                        </View>
-                        <Switch
-                            value={outdoor}
-                            onValueChange={setOutdoor}
-                            trackColor={{ false: colors.border, true: colors.primary }}
-                        />
+                <Field label="Priority">
+                    <View style={formStyles.chips}>
+                        {PRIORITIES.map(p => {
+                            const active = p === priority;
+                            return (
+                                <Pressable
+                                    key={p}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: active }}
+                                    onPress={() => setPriority(p)}
+                                    style={[
+                                        formStyles.chip,
+                                        { backgroundColor: PRIORITY_COLOR[p] },
+                                        active ? { borderColor: colors.text } : formStyles.chipInactive,
+                                    ]}>
+                                    <Text style={formStyles.chipText}>{PRIORITY_LABEL[p]}</Text>
+                                </Pressable>
+                            );
+                        })}
                     </View>
+                </Field>
 
-                    <Field label="Subtasks">
-                        {subtasks.map((s, i) => (
-                            <View
-                                key={s.id ?? `new-${i}`}
-                                style={[formStyles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <Text style={[formStyles.subtaskText, { color: colors.text }]}>{s.title}</Text>
+                <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
+                    <PickerRow label="Date">
+                        <DateTimePicker
+                            value={fromDateString(date)}
+                            mode="date"
+                            display="compact"
+                            locale="en-GB"
+                            themeVariant={pickerTheme}
+                            onValueChange={(_, d) => { setDate(toDateString(d)); clearError('date'); }}
+                        />
+                    </PickerRow>
+                    <DateTimePicker
+                        value={fromTimeString(start)}
+                        mode="time"
+                        display="compact"
+                        themeVariant={pickerTheme}
+                        onValueChange={(_, d) => { setStart(toTimeString(d)); clearError('start'); }}
+                    />
+                    {end === null ? (
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => setEnd(addMinutes(start, 60))}
+                            style={formStyles.addEnd}>
+                            <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+                            <Text style={{ color: colors.text }}>Add end time</Text>
+                        </Pressable>
+                    ) : (
+                        <PickerRow label="End">
+                            <View style={formStyles.endControls}>
+                                <DateTimePicker
+                                    value={fromTimeString(end)}
+                                    mode="time"
+                                    display="compact"
+                                    themeVariant={pickerTheme}
+                                    onValueChange={(_, d) => { setEnd(toTimeString(d)); clearError('end'); }}
+                                />
                                 <Pressable
                                     accessibilityRole="button"
-                                    accessibilityLabel={`Remove ${s.title}`}
+                                    accessibilityLabel="Remove end time"
                                     hitSlop={8}
-                                    onPress={() => setSubtasks(prev => prev.filter((_, idx) => idx !== i))}>
+                                    onPress={() => { setEnd(null); clearError('end'); }}>
                                     <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                                 </Pressable>
                             </View>
-                        ))}
-                        <View style={formStyles.subtaskInputRow}>
-                            <TextInput
-                                accessibilityLabel="New subtask"
-                                value={newSubtask}
-                                onChangeText={setNewSubtask}
-                                onSubmitEditing={addSubtask}
-                                placeholder="Add a subtask"
-                                placeholderTextColor={colors.textMuted}
-                                returnKeyType="done"
-                                style={[inputStyle(false), formStyles.subtaskInput]}
-                            />
+                        </PickerRow>
+                    )}
+                </Field>
+
+                <Field label="Tag" error={errors.tag}>
+                    <TextInput
+                        accessibilityLabel="Task tag"
+                        value={tag}
+                        onChangeText={t => { setTag(t); clearError('tag'); }}
+                        placeholder="General"
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={TAG_MAX + 10}
+                        style={inputStyle(!!errors.tag)}
+                    />
+                </Field>
+
+                <View style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={formStyles.switchText}>
+                        <Text style={[formStyles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
+                        <Text style={[formStyles.hint, { color: colors.textMuted }]}>
+                            Get a weather warning on this task
+                        </Text>
+                    </View>
+                    <Switch
+                        value={outdoor}
+                        onValueChange={setOutdoor}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                </View>
+
+                <Field label="Subtasks">
+                    {subtasks.map((s, i) => (
+                        <View
+                            key={s.id ?? `new-${i}`}
+                            style={[formStyles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <Text style={[formStyles.subtaskText, { color: colors.text }]}>{s.title}</Text>
                             <Pressable
                                 accessibilityRole="button"
-                                accessibilityLabel="Add subtask"
-                                onPress={addSubtask}
-                                style={[formStyles.addButton, { backgroundColor: colors.surfaceAlt }]}>
-                                <Ionicons name="add" size={22} color={colors.text} />
+                                accessibilityLabel={`Remove ${s.title}`}
+                                hitSlop={8}
+                                onPress={() => setSubtasks(prev => prev.filter((_, idx) => idx !== i))}>
+                                <Ionicons name="close-circle" size={22} color={colors.textMuted} />
                             </Pressable>
                         </View>
-                    </Field>
+                    ))}
+                    <View style={formStyles.subtaskInputRow}>
+                        <TextInput
+                            accessibilityLabel="New subtask"
+                            value={newSubtask}
+                            onChangeText={setNewSubtask}
+                            onSubmitEditing={addSubtask}
+                            placeholder="Add a subtask"
+                            placeholderTextColor={colors.textMuted}
+                            returnKeyType="done"
+                            style={[inputStyle(false), formStyles.subtaskInput]}
+                        />
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Add subtask"
+                            onPress={addSubtask}
+                            style={[formStyles.addButton, { backgroundColor: colors.surfaceAlt }]}>
+                            <Ionicons name="add" size={22} color={colors.text} />
+                        </Pressable>
+                    </View>
+                </Field>
 
-                    <Pressable
-                        accessibilityRole="button"
-                        onPress={handleSave}
-                        style={[formStyles.save, { backgroundColor: colors.primary }]}>
-                        <Text style={[formStyles.saveText, { color: colors.onPrimary }]}>Add task</Text>
-                    </Pressable>
+                <Pressable
+                    accessibilityRole="button"
+                    onPress={handleSave}
+                    style={[formStyles.save, { backgroundColor: colors.primary }]}>
+                    <Text style={[formStyles.saveText, { color: colors.onPrimary }]}>Add task</Text>
+                </Pressable>
+            </ScrollView>
+        </>
+    );
+}
 
-                    <Pressable accessibilityRole="button" onPress={onClose} style={formStyles.cancel}>
-                        <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>Cancel</Text>
-                    </Pressable>
-                </ScrollView>
+// ─── Flippable card ───────────────────────────────────────────────────────────
+
+interface Props {
+    isFlipped: boolean;
+    onClose: () => void;
+    initialDate?: string;
+    title: string;
+    subtitle?: string;
+    style?: StyleProp<ViewStyle>;
+    children: React.ReactNode;
+}
+
+export function FlippableNotebookCard({
+    isFlipped,
+    onClose,
+    initialDate,
+    title,
+    subtitle,
+    style,
+    children,
+}: Props) {
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
+    const { width: winW, height: winH } = useWindowDimensions();
+
+    const progress = useSharedValue(0);
+
+    const sx = useSharedValue(0);
+    const sy = useSharedValue(0);
+    const sw = useSharedValue(0);
+    const sh = useSharedValue(0);
+
+    const ex = EXPANDED_SIDE;
+    const ey = insets.top + spacing.md;
+    const ew = winW - EXPANDED_SIDE * 2;
+    const expandedBottom = winH - insets.bottom - spacing.sm;
+
+    useEffect(() => {
+        progress.value = withTiming(isFlipped ? 1 : 0, {
+            duration: FLIP_DURATION,
+            easing: Easing.inOut(Easing.cubic),
+        });
+    }, [isFlipped, progress]);
+
+    const containerStyle = useAnimatedStyle(() => {
+        const endHeight = expandedBottom - ey;
+        return {
+            opacity: sw.value > 0 ? 1 : 0,
+            left: interpolate(progress.value, [0, 1], [sx.value, ex]),
+            top: interpolate(progress.value, [0, 1], [sy.value, ey]),
+            width: interpolate(progress.value, [0, 1], [sw.value, ew]),
+            height: interpolate(progress.value, [0, 1], [sh.value, endHeight]),
+        };
+    });
+
+    const frontStyle = useAnimatedStyle(() => ({
+        transform: [
+            { perspective: 1200 },
+            { rotateY: `${interpolate(progress.value, [0, 1], [0, 180])}deg` },
+        ],
+    }));
+
+    const backStyle = useAnimatedStyle(() => ({
+        transform: [
+            { perspective: 1200 },
+            { rotateY: `${interpolate(progress.value, [0, 1], [180, 360])}deg` },
+        ],
+    }));
+
+    return (
+        <>
+            <View
+                pointerEvents="none"
+                style={[style, styles.placeholder]}
+                onLayout={e => {
+                    const { x, y, width, height } = e.nativeEvent.layout;
+                    sx.value = x;
+                    sy.value = y;
+                    sw.value = width;
+                    sh.value = height;
+                }}
+            />
+
+            <Animated.View style={[styles.container, containerStyle]}>
+                {/* FRONT: list */}
+                <Animated.View
+                    pointerEvents={isFlipped ? 'none' : 'auto'}
+                    style={[styles.face, { backgroundColor: colors.surface }, frontStyle]}>
+                    <Rings />
+                    <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                    {subtitle ? (
+                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+                    ) : null}
+                    {children}
+                </Animated.View>
+
+                {/* BACK: add task */}
+                <Animated.View
+                    pointerEvents={isFlipped ? 'auto' : 'none'}
+                    style={[styles.face, { backgroundColor: colors.surface }, backStyle]}>
+                    <Rings />
+                    <AddTaskForm isVisible={isFlipped} onClose={onClose} initialDate={initialDate} />
+                </Animated.View>
             </Animated.View>
-        </View>
+        </>
     );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+    placeholder: { opacity: 0 },
+    container: {
+        position: 'absolute',
+        zIndex: 10,
+        elevation: 10,
+    },
+    face: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backfaceVisibility: 'hidden',
+        borderRadius: radius.lg,
+        paddingTop: spacing.xl + spacing.md,
+        paddingBottom: spacing.md,
+        paddingHorizontal: spacing.lg,
+        shadowColor: palette.bistre,
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 4, height: 4 },
+        elevation: 6,
+    },
     rings: {
         position: 'absolute',
         top: -10,
@@ -401,50 +476,39 @@ const styles = StyleSheet.create({
     ring: {
         width: 15,
         height: 30,
-        borderBottomLeftRadius: 6,
-        borderTopLeftRadius: 6,
-        borderBottomRightRadius: 6,
-        borderTopRightRadius: 6,
-    },
-    card: {
-        borderRadius: radius.lg,
-        paddingTop: spacing.xl + spacing.md,
-        paddingBottom: spacing.md,
-        paddingHorizontal: spacing.lg,
-        shadowColor: palette.bistre,
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 4, height: 4 },
-        elevation: 6,
+        borderRadius: 6,
     },
     title: { fontSize: fontSize.body + 2, fontWeight: '700', textAlign: 'center' },
-    subtitle: {
+        subtitle: {
         fontSize: fontSize.caption + 1,
         textAlign: 'center',
         marginTop: spacing.xs,
         marginBottom: spacing.md,
     },
-    backdrop: {
-        backgroundColor: '#000',
+    formHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    overlayCard: {
-        position: 'absolute',
-        left: spacing.lg,
-        right: spacing.lg,
-        top: spacing.xl * 2,
-        bottom: spacing.xl,
-        borderRadius: radius.lg,
-        paddingTop: spacing.xl + spacing.md,
-        paddingHorizontal: spacing.lg,
-        shadowColor: palette.bistre,
-        shadowOpacity: 0.35,
-        shadowOffset: { width: 0, height: 8 },
-        shadowRadius: 24,
-        elevation: 16,
+    headerSide: { width: 36 },
+    headerSideRight: { alignItems: 'flex-end' },
+    headerTitle: {
+        flex: 1,
+        fontSize: fontSize.body + 2,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    closeButton: {
+        width: 32,
+        height: 32,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 
 const formStyles = StyleSheet.create({
-    content: { paddingTop: spacing.sm, paddingBottom: spacing.xl * 2 },
+    content: { paddingTop: spacing.md, paddingBottom: spacing.xl },
     field: { marginBottom: spacing.lg, gap: spacing.sm },
     label: { fontSize: fontSize.caption + 1, fontWeight: '600', textTransform: 'uppercase' },
     error: { fontSize: fontSize.caption + 1 },
@@ -498,5 +562,4 @@ const formStyles = StyleSheet.create({
         marginTop: spacing.md,
     },
     saveText: { fontSize: fontSize.body, fontWeight: '700' },
-    cancel: { alignItems: 'center', paddingVertical: spacing.lg },
 });

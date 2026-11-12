@@ -20,16 +20,14 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
     const tasksRoute = state.routes.find(r => r.name === 'Tasks');
     const isFormOpen = isTasksTab && (tasksRoute?.params as { formOpen?: boolean } | undefined)?.formOpen === true;
 
-    // Animate bar margin based on whether FAB is showing
     const animValue = useRef(new Animated.Value(isTasksTab ? 1 : 0)).current;
     useEffect(() => {
         Animated.spring(animValue, {
             toValue: isTasksTab ? 1 : 0,
             useNativeDriver: false,
         }).start();
-    }, [isTasksTab]);
+    }, [isTasksTab, animValue]);
 
-    // Slide tab bar down + fade when form is open
     const formAnim = useRef(new Animated.Value(0)).current;
     useEffect(() => {
         Animated.spring(formAnim, {
@@ -38,10 +36,8 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
             damping: 18,
             stiffness: 120,
         }).start();
-    }, [isFormOpen]);
+    }, [isFormOpen, formAnim]);
 
-    // ตอนไม่มี FAB: bar มี margin สองข้างทำให้ดูอยู่กลาง
-    // ตอนมี FAB: margin = 0 bar ขยายเต็มพื้นที่ที่เหลือ (flex:1 เสมอ)
     const barMargin = animValue.interpolate({
         inputRange: [0, 1],
         outputRange: [spacing.xl * 3, 0],

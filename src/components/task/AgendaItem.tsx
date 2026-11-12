@@ -11,16 +11,18 @@ import { PRIORITY_COLOR } from '../../theme/priority';
 import Check from './Check';
 
 import { isOverdue } from '../../utils/taskStatus';
+import type { WeatherWarning } from '../../utils/weatherWarning';
 
 interface Props {
     task: Task;
     done: boolean;
+    warning?: WeatherWarning | null;
     onToggle: () => void;
     onToggleSubtask: (subtaskId: string) => void;
     onPress: () => void;
 }
 
-export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPress }: Props) {
+export default function AgendaItem({ task, done, warning, onToggle, onToggleSubtask, onPress }: Props) {
     const { colors } = useTheme();
     const time = task.start.replace(/^0/, ''); // 07:00 -> 7:00
     const range = task.end ? `${task.start} - ${task.end}` : null;
@@ -38,7 +40,11 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
                 <View style={styles.top}>
                     <Text
                         numberOfLines={2}
-                        style={[styles.title, { color: colors.agendaInk }, done && { textDecorationLine: 'line-through', color: colors.agendaInkMuted }]}>
+                        style={[
+                            styles.title,
+                            { color: colors.agendaInk },
+                            done && [styles.strike, { color: colors.agendaInkMuted }],
+                        ]}>
                         {task.title}
                     </Text>
                     <View style={[styles.chip, { backgroundColor: chipBg }]}>
@@ -48,6 +54,7 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
                 </View>
 
                 {range ? <Text style={[styles.range, { color: colors.agendaInkMuted }]}>{range}</Text> : null}
+
                 {overdue ? (
                     <View style={styles.overdue}>
                         <Ionicons name="alert-circle" size={14} color={colors.agendaOverdue} />
@@ -55,10 +62,28 @@ export default function AgendaItem({ task, done, onToggle, onToggleSubtask, onPr
                     </View>
                 ) : null}
 
+                {warning ? (
+                    <View style={styles.warning}>
+                        <Ionicons
+                            name={warning.kind === 'rain' ? 'rainy-outline' : 'thermometer-outline'}
+                            size={14}
+                            color={colors.agendaInk}
+                        />
+                        <Text style={[styles.warningText, { color: colors.agendaInk }]}>{warning.label}</Text>
+                    </View>
+                ) : null}
+
                 {task.subtasks?.map(s => (
                     <View key={s.id} style={styles.subtask}>
                         <Check checked={s.done} onPress={() => onToggleSubtask(s.id)} label={s.title} size={22} />
-                        <Text style={[styles.subtaskText, { color: colors.agendaInk }, s.done && { textDecorationLine: 'line-through', color: colors.agendaInkMuted }]}>{s.title}</Text>
+                        <Text
+                            style={[
+                                styles.subtaskText,
+                                { color: colors.agendaInk },
+                                s.done && [styles.strike, { color: colors.agendaInkMuted }],
+                            ]}>
+                            {s.title}
+                        </Text>
                     </View>
                 ))}
             </Pressable>
@@ -84,9 +109,12 @@ const styles = StyleSheet.create({
         borderRadius: radius.pill,
     },
     chipText: { fontSize: fontSize.caption },
+    strike: { textDecorationLine: 'line-through' },
     range: { fontSize: fontSize.caption + 1 },
     subtask: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
     subtaskText: { flex: 1, fontSize: fontSize.body - 2 },
     overdue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     overdueText: { fontSize: fontSize.caption + 1, fontWeight: '600' },
+    warning: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    warningText: { fontSize: fontSize.caption + 1, fontWeight: '600' },
 });
