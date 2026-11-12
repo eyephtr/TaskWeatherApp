@@ -5,12 +5,12 @@ import { Ionicons } from '@react-native-vector-icons/ionicons';
 import type { DailyForecast } from '../../types/weather';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../../theme/tokens';
+import { fontSize, spacing } from '../../theme/tokens';
 
 import { describeWeather } from '../../services/weatherCodes';
 import { weekdayShort } from '../../utils/date';
 
-const RAIN_CHANCE_SHOWN = 30; // แสดงโอกาสฝนเมื่อตั้งแต่ 30% ขึ้นไป
+const RAIN_CHANCE_SHOWN = 30;
 
 interface Props {
     days: DailyForecast[];
@@ -20,7 +20,7 @@ interface Props {
 export default function ForecastCard({ days, today }: Props) {
     const { colors } = useTheme();
     return (
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View>
             <Text style={[styles.title, { color: colors.text }]}>Forecast</Text>
             {days.map((day, i) => {
                 const { label, icon } = describeWeather(day.weatherCode, true);
@@ -61,8 +61,7 @@ export default function ForecastCard({ days, today }: Props) {
 }
 
 const styles = StyleSheet.create({
-    card: { borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-    title: { fontSize: fontSize.body, fontWeight: '700', paddingVertical: spacing.md },
+    title: { fontSize: fontSize.title - 2, fontWeight: '700', paddingVertical: spacing.md },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
