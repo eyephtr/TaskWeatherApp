@@ -407,10 +407,12 @@ export function FlippableNotebookCard({
                 style={[style, styles.placeholder]}
                 onLayout={e => {
                     const { x, y, width, height } = e.nativeEvent.layout;
-                    sx.value = x;
-                    sy.value = y;
-                    sw.value = width;
-                    sh.value = height;
+                    const first = sw.value === 0;
+                    const cfg = { duration: 300, easing: Easing.out(Easing.cubic) };
+                    sx.value = first ? x : withTiming(x, cfg);
+                    sy.value = first ? y : withTiming(y, cfg);
+                    sw.value = first ? width : withTiming(width, cfg);
+                    sh.value = first ? height : withTiming(height, cfg);
                 }}
             />
 
@@ -479,7 +481,7 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     title: { fontSize: fontSize.body + 2, fontWeight: '700', textAlign: 'center' },
-        subtitle: {
+    subtitle: {
         fontSize: fontSize.caption + 1,
         textAlign: 'center',
         marginTop: spacing.xs,
