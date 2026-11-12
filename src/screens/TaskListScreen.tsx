@@ -22,8 +22,9 @@ import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
+import { useWeatherStore } from '../store/useWeatherStore';
 
-import { NotebookCardFront, AddTaskOverlay } from '../components/task/FlippableNotebookCard';
+import FlippableNotebookCard from '../components/task/FlippableNotebookCard';
 import AgendaItem from '../components/task/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/task/WeekStrip';
 import IconSegmentedControl, { type SegmentOption } from '../components/common/IconSegmentedControl';
@@ -37,6 +38,7 @@ import { groupByDate, sortByDateTime, sortByStart } from '../utils/taskSelectors
 import { filterTasks, type StatusFilter as Status } from '../utils/taskFilters';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
 import { useDebounce } from '../utils/useDebounce';
+import { getWeatherWarning } from '../utils/weatherWarning';
 
 type CalendarProps = React.ComponentProps<typeof CalendarList>;
 type ViewMode = 'list' | 'calendar';
@@ -79,6 +81,7 @@ export default function TaskListScreen() {
     const storeStatus = useTaskStore(s => s.status);
     const error = useTaskStore(s => s.error);
     const clearError = useTaskStore(s => s.clearError);
+    const forecast = useWeatherStore(s => s.data?.daily);
 
     const tasksByDate = useMemo(() => groupByDate(allTasks), [allTasks]);
 
@@ -92,10 +95,9 @@ export default function TaskListScreen() {
         }
     }, [route.params?.flip, route.params?.formOpen]);
 
-    // Sync formOpen state back to route params so FloatingTabBar can read it
     useEffect(() => {
         tabNavigation.setParams({ formOpen: isFlipped });
-    }, [isFlipped]);
+    }, [isFlipped, tabNavigation]);
 
     useEffect(() => {
         setVisibleMonth(monthStartOf(calendarStart));
@@ -291,12 +293,18 @@ export default function TaskListScreen() {
                 </View>
             )}
 
-            <NotebookCardFront title={title} subtitle={subtitle} style={styles.note}>
+            <FlippableNotebookCard
+                title={title}
+                subtitle={subtitle}
+                style={styles.note}
+                isFlipped={isFlipped}
+                onFlipBack={() => setIsFlipped(false)}
+                initialDate={selected}>
                 {error ? (
                     <StatusBanner title={error} actionLabel="OK" onAction={clearError} />
                 ) : null}
                 {storeStatus === 'loading' || storeStatus === 'idle' ? (
-                    <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1, alignSelf: 'center' }} />
+                    <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
                 ) : (
                     <>
                         <StatusFilter value={statusFilter} onChange={setStatusFilter} />
@@ -320,18 +328,14 @@ export default function TaskListScreen() {
                                             onToggle={() => toggleDone(t.id)}
                                             onToggleSubtask={subtaskId => toggleSubtask(t.id, subtaskId)}
                                             onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
+                                            warning={getWeatherWarning(t, forecast)}
                                         />
                                     </React.Fragment>
                                 ))}
                         </ScrollView>
                     </>
                 )}
-            </NotebookCardFront>
-            <AddTaskOverlay
-                isVisible={isFlipped}
-                onClose={() => setIsFlipped(false)}
-                initialDate={selected}
-            />
+            </FlippableNotebookCard>
         </View>
     );
 }
@@ -365,4 +369,5 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         marginBottom: spacing.sm,
     },
+    loader: { flex: 1, alignSelf: 'center' },
 });
