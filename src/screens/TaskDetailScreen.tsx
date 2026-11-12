@@ -207,12 +207,8 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                 keyboardShouldPersistTaps="handled"
                 automaticallyAdjustKeyboardInsets>
                 <Text style={[styles.tagLabel, { color: colors.primary }]}>{task.tag}</Text>
+
                 <View style={styles.titleRow}>
-                    {warning ? (
-                        <View style={styles.warning}>
-                            <StatusBanner title={warning.label} message={warning.message} />
-                        </View>
-                    ) : null}
                     <Text style={[styles.title, { color: colors.text }, task.done && styles.titleDone]}>
                         {task.title}
                     </Text>
@@ -240,6 +236,12 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                     <Pill text={task.start} style={styles.timePill} />
                     {task.end ? <Pill text={task.end} style={styles.timePill} /> : null}
                 </View>
+
+                {warning ? (
+                    <View style={styles.warning}>
+                        <StatusBanner title={warning.label} message={warning.message} />
+                    </View>
+                ) : null}
 
                 <Divider />
 
