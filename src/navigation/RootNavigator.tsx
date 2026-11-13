@@ -37,27 +37,46 @@ const SettingsIcon = ({ focused, color, size }: TabIconProps) => (
 
 const renderTabBar = (props: BottomTabBarProps) => <FloatingTabBar {...props} />;
 
+
 function Tabs() {
     return (
-        <Tab.Navigator tabBar={renderTabBar}>
+        <Tab.Navigator
+            tabBar={renderTabBar}
+            screenOptions={{
+                animation: 'shift',
+            }}
+        >
             <Tab.Screen
                 name="Tasks"
                 component={TaskListScreen}
-                options={{ headerShown: false, title: 'Tasks', tabBarIcon: TasksIcon }}
+                options={{
+                    headerShown: false,
+                    title: 'Tasks',
+                    tabBarIcon: TasksIcon,
+                }}
             />
             <Tab.Screen
                 name="Weather"
                 component={WeatherScreen}
-                options={{ headerShown: false, title: 'Weather', tabBarIcon: WeatherIcon }}
+                options={{
+                    headerShown: false,
+                    title: 'Weather',
+                    tabBarIcon: WeatherIcon,
+                }}
             />
             <Tab.Screen
                 name="Settings"
                 component={SettingsScreen}
-                options={{ headerShown: false, title: 'Settings', tabBarIcon: SettingsIcon }}
+                options={{
+                    headerShown: false,
+                    title: 'Settings',
+                    tabBarIcon: SettingsIcon,
+                }}
             />
         </Tab.Navigator>
     );
 }
+
 
 export default function RootNavigator() {
     return (
