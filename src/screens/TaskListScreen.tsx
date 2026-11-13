@@ -9,6 +9,11 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
+import Animated, {
+    Easing,
+    FadeInUp,
+    FadeOut,
+} from 'react-native-reanimated';
 import { CalendarList, type DateData } from 'react-native-calendars';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -338,7 +343,21 @@ export default function TaskListScreen() {
                     <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
                 ) : (
                     <>
-                        {filterOpen ? <FilterChips value={listFilter} onChange={setListFilter} /> : null}
+                        {filterOpen ? (
+                            <Animated.View
+                                entering={FadeInUp
+                                    .duration(250)
+                                    .easing(Easing.out(Easing.cubic))}
+                                exiting={FadeOut
+                                    .duration(180)
+                                    .easing(Easing.in(Easing.cubic))}
+                            >
+                                <FilterChips
+                                    value={listFilter}
+                                    onChange={setListFilter}
+                                />
+                            </Animated.View>
+                        ) : null}
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
