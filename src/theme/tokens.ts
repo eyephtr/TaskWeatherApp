@@ -25,6 +25,7 @@ export const palette = {
 
 export interface ThemeColors {
     background: string;
+    backgroundDeep: string;
     onInverse: string;
     surface: string;
     surfaceAlt: string;
@@ -54,6 +55,7 @@ export interface ThemeColors {
 
 export const lightColors: ThemeColors = {
     background: palette.raelynn,
+    backgroundDeep: '#EFD46B',
     onInverse: palette.raelynn,
     surface: palette.mutedOffWhite,
     surfaceAlt: palette.peachPuff,
@@ -83,6 +85,7 @@ export const lightColors: ThemeColors = {
 
 export const darkColors: ThemeColors = {
     background: '#2A1D15',
+    backgroundDeep: '#1F150F',
     onInverse: palette.bistre,
     surface: '#4A372B',
     surfaceAlt: '#5C4636', // derived

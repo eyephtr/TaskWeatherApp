@@ -38,6 +38,7 @@ import SearchBar from '../components/task/SearchBar';
 import EmptyState from '../components/common/EmptyState';
 import StatusBanner from '../components/common/StatusBanner';
 import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
+import SplitBackground from '../components/common/SplitBackground';
 import FilterChips, { type ListFilter } from '../components/task/FilterChips';
 
 import { groupByDate, sortByDateTime } from '../utils/taskSelectors';
@@ -247,7 +248,7 @@ export default function TaskListScreen() {
     };
 
     return (
-        <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <SplitBackground>
             {searchOpen ? (
                 <SearchBar value={query} onChangeText={setQuery} onClose={closeSearch} />
             ) : (
@@ -388,12 +389,11 @@ export default function TaskListScreen() {
                     </>
                 )}
             </FlippableNotebookCard>
-        </View>
+        </SplitBackground>
     );
 }
 
 const styles = StyleSheet.create({
-    root: { flex: 1 },
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
