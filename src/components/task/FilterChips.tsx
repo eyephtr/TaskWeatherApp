@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../../theme/tokens';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 
 export type ListFilter = 'all' | 'active' | 'done' | 'priority';
 
@@ -26,7 +26,7 @@ export default function FilterChips({ value, onChange }: { value: ListFilter; on
                         accessibilityState={{ selected: active }}
                         onPress={() => onChange(o.key)}
                         style={[styles.chip, { backgroundColor: active ? colors.text : colors.surfaceAlt }]}>
-                        <Text style={[styles.text, { color: active ? palette.raelynn : colors.text }]}>
+                        <Text style={[styles.text, { color: active ? colors.onInverse : colors.text }]}>
                             {o.label}
                         </Text>
                     </Pressable>

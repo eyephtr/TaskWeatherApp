@@ -80,7 +80,7 @@ function AddTaskForm({
 
     const [formTitle, setFormTitle] = useState('');
     const [tag, setTag] = useState('');
-    const [priority, setPriority] = useState<Priority>('medium');
+    const [priority, setPriority] = useState<Priority>('none');
     const [color, setColor] = useState<TaskColorKey>(DEFAULT_TASK_COLOR);
     const [date, setDate] = useState(initialDate ?? toDateString(new Date()));
     const [start, setStart] = useState('09:00');
@@ -95,7 +95,7 @@ function AddTaskForm({
             savedRef.current = false;
             setFormTitle('');
             setTag('');
-            setPriority('medium');
+            setPriority('none');
             setColor(DEFAULT_TASK_COLOR);
             setDate(toDateString(new Date()));
             setStart('09:00');

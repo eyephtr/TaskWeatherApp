@@ -79,7 +79,6 @@ export default function SettingsScreen() {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
 
-    // สถานะชั่วคราวสำหรับ UI
     const [showCompleted, setShowCompleted] = useState(true);
     const [rainAlerts, setRainAlerts] = useState(true);
 
@@ -95,12 +94,6 @@ export default function SettingsScreen() {
                     paddingBottom: TAB_BAR_CLEARANCE + spacing.lg,
                 }}>
                 <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-
-                <Group title="Appearance">
-                    <View style={styles.appearance}>
-                        <ModePicker />
-                    </View>
-                </Group>
 
                 <Group title="Tasks">
                     <SettingRow
@@ -125,6 +118,12 @@ export default function SettingsScreen() {
                         last
                         right={<Text style={{ color: colors.textMuted }}>°C</Text>}
                     />
+                </Group>
+
+                <Group title="Appearance">
+                    <View style={styles.appearance}>
+                        <ModePicker />
+                    </View>
                 </Group>
 
                 <Group title="About">

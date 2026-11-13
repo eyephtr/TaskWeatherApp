@@ -19,7 +19,8 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing, TASK_COLORS } from '../theme/tokens';
+import { fontSize, radius, spacing, TASK_DOT_COLORS } from '../theme/tokens';
+import { FLAG_COLOR } from '../theme/priority';
 
 import { useTaskStore } from '../store/useTaskStore';
 import { useWeatherStore } from '../store/useWeatherStore';
@@ -141,14 +142,10 @@ export default function TaskListScreen() {
         Object.entries(tasksByDate).forEach(([date, list]) => {
             const dotColors = list.map(t =>
                 t.color
-                    ? TASK_COLORS[t.color]
-                    : t.priority === 'high'
-                        ? colors.priorityHigh
-                        : t.priority === 'medium'
-                            ? colors.priorityMedium
-                            : t.priority === 'low'
-                                ? colors.priorityLow
-                                : colors.textMuted,
+                    ? TASK_DOT_COLORS[t.color]
+                    : t.priority === 'none'
+                        ? colors.textMuted
+                        : FLAG_COLOR[t.priority],
             );
             map[date] = Array.from(new Set(dotColors)).slice(0, 3);
         });
@@ -172,7 +169,7 @@ export default function TaskListScreen() {
             textDisabledColor: colors.textMuted,
             todayTextColor: colors.primary,
             selectedDayBackgroundColor: colors.text,
-            selectedDayTextColor: palette.raelynn,
+            selectedDayTextColor: colors.onInverse,
             textDayFontWeight: '500',
             textDayHeaderFontWeight: '500',
             weekVerticalMargin: 2,
@@ -245,7 +242,7 @@ export default function TaskListScreen() {
     };
 
     return (
-        <View style={[styles.root, { backgroundColor: palette.raelynn }]}>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
             {searchOpen ? (
                 <SearchBar value={query} onChangeText={setQuery} onClose={closeSearch} />
             ) : (
@@ -330,7 +327,7 @@ export default function TaskListScreen() {
                         <Ionicons
                             name="options-outline"
                             size={18}
-                            color={listFilter !== 'all' ? palette.raelynn : colors.text}
+                            color={listFilter !== 'all' ? colors.onInverse : colors.text}
                         />
                     </Pressable>
                 }>

@@ -66,7 +66,7 @@ export default function AgendaItem({
     const time = task.start.replace(/^0/, ''); // 07:00 -> 7:00
     const range = task.end ? `${task.start} - ${task.end}` : null;
     const overdue = isOverdue(task);
-    const chipBg = colors.surface + '99';
+    const chipBg = palette.white + '66';
 
     return (
         <View style={styles.row}>

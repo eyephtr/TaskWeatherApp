@@ -13,7 +13,7 @@ const PLUS_SIZE = 20;
 const PLUS_THICKNESS = 3;
 
 export default function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
     const isTasksTab = state.routes[state.index]?.name === 'Tasks';
@@ -110,7 +110,10 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
                             navigation.navigate('Tasks', { flip: Date.now() });
                         }
                     }}
-                    style={[styles.fab, { backgroundColor: isFormOpen ? colors.text : colors.primary }]}>
+                    style={[
+                        styles.fab,
+                        { backgroundColor: isFormOpen ? (isDark ? colors.accentSoft : colors.text) : colors.primary },
+                    ]}>
                     <View style={styles.plus}>
                         {isFormOpen ? (
                             // × icon

@@ -68,7 +68,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
 
     const [title, setTitle] = useState(existing?.title ?? '');
     const [tag, setTag] = useState(existing?.tag ?? '');
-    const [priority, setPriority] = useState<Priority>(existing?.priority ?? 'medium');
+    const [priority, setPriority] = useState<Priority>(existing?.priority ?? 'none');
     const [color, setColor] = useState<TaskColorKey>(existing?.color ?? DEFAULT_TASK_COLOR);
     const [date, setDate] = useState(
         existing?.date ?? route.params?.date ?? toDateString(new Date()),
@@ -88,7 +88,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
 
     if (taskId && !existing) {
         return (
-            <View style={[styles.center, { backgroundColor: palette.raelynn }]}>
+            <View style={[styles.center, { backgroundColor: colors.background }]}>
                 <Text style={[styles.notFound, { color: colors.text }]}>This task no longer exists.</Text>
                 <Pressable onPress={navigation.goBack} accessibilityRole="button">
                     <Text style={{ color: colors.primary }}>Go back</Text>
@@ -171,11 +171,11 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const hasTimeError = Boolean(errors.start || errors.end);
 
     return (
-        <View style={[styles.root, { backgroundColor: palette.mutedOffWhite }]}>
+        <View style={[styles.root, { backgroundColor: colors.surface }]}>
             <ScreenHeader variant="close" title={taskId ? 'Edit Task' : 'New Task'} />
             <ScrollView
                 ref={scrollViewRef}
-                style={[styles.root, { backgroundColor: palette.mutedOffWhite }]}
+                style={[styles.root, { backgroundColor: colors.surface }]}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 automaticallyAdjustKeyboardInsets>

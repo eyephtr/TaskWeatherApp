@@ -11,18 +11,17 @@ import {
 } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../../theme/tokens';
+import { fontSize, radius, spacing } from '../../theme/tokens';
 
 import { addDays, dayNames, diffDays, startOfWeek } from '../../utils/date';
 
 export const WEEK_STRIP_HEIGHT = 84;
-const WEEK_RANGE = 52; // เลื่อนได้ย้อนหลังและล่วงหน้าอย่างละ 52 สัปดาห์
-const PAGE_PADDING = spacing.sm + 5; // ให้ตรงกับขอบของปฏิทินรายเดือน
+const WEEK_RANGE = 52;
+const PAGE_PADDING = spacing.sm + 5;
 
 interface Props {
-    selected: string; // 'YYYY-MM-DD'
+    selected: string;
     today: string;
-    /** สีจุดใต้วันที่ (วันละไม่เกิน 3 จุด) */
     dots: Record<string, string[]>;
     onSelect: (date: string) => void;
 }
@@ -36,13 +35,11 @@ export default function WeekStrip({ selected, today, dots, onSelect }: Props) {
         return Array.from({ length: WEEK_RANGE * 2 + 1 }, (_, i) => addDays(anchor, (i - WEEK_RANGE) * 7));
     }, [today]);
 
-    // เริ่มที่สัปดาห์ของวันที่เลือก (ใช้ค่าครั้งแรกครั้งเดียว)
     const [initialIndex] = useState(() => {
         const idx = weeks.indexOf(startOfWeek(selected));
         return idx >= 0 ? idx : WEEK_RANGE;
     });
 
-    // ปัดไปสัปดาห์ใหม่แล้วเลือก "วันเดียวกันของสัปดาห์" ให้อัตโนมัติ
     const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const index = Math.round(e.nativeEvent.contentOffset.x / width);
         const weekStart = weeks[index];
@@ -78,7 +75,7 @@ export default function WeekStrip({ selected, today, dots, onSelect }: Props) {
                                     styles.dayText,
                                     {
                                         color: isSelected
-                                            ? palette.raelynn
+                                            ? colors.onInverse
                                             : isToday
                                                 ? colors.primary
                                                 : colors.text,

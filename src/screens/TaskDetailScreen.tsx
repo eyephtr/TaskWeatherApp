@@ -121,7 +121,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const { taskId } = route.params;
-    const background = isDark ? palette.bistre : palette.linenCream;
+    const background = isDark ? colors.background : palette.linenCream;
 
     const liveTask = useTaskStore(s => s.tasks.find(t => t.id === taskId));
     const toggleDone = useTaskStore(s => s.toggleDone);
@@ -257,7 +257,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                     />
                 </PropertyRow>
                 <PropertyRow label="Tags">
-                    <Chip text={task.tag} bg={palette.subtlePurple} fg={colors.text} />
+                    <Chip text={task.tag} bg={palette.subtlePurple} fg={palette.bistre} />
                     {task.outdoor ? (
                         <Chip text="Outdoor" bg={colors.success} fg={colors.onSuccess} icon="partly-sunny-outline" />
                     ) : null}
