@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     range: { marginLeft: spacing.lg, marginBottom: 16, gap: spacing.sm },
     rangeItem: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     rangeText: { fontSize: fontSize.body, fontWeight: '700' },
-    illustration: { alignItems: 'center', marginVertical: -spacing.xl },
+    illustration: { alignItems: 'center', marginTop: -spacing.xl * 3, marginBottom: -spacing.xl },
     day: { fontSize: fontSize.title, textAlign: 'center', fontWeight: '600' },
     condition: { fontSize: fontSize.body, textAlign: 'center', opacity: 0.8, marginTop: 2 },
     stats: {
