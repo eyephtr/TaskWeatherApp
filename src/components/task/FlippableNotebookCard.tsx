@@ -25,12 +25,15 @@ import Animated, {
 import type { Priority, SubtaskInput, TaskInput, ValidationErrors } from '../../types/task';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../../theme/tokens';
+import { DEFAULT_TASK_COLOR, fontSize, palette, radius, spacing, type TaskColorKey } from '../../theme/tokens';
 import { PRIORITIES, PRIORITY_COLOR, PRIORITY_LABEL } from '../../theme/priority';
 
 import { useTaskStore } from '../../store/useTaskStore';
 
-import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../../utils/date';
+import TimeRangeRow from './TimeRangeRow';
+import ColorPicker from './ColorPicker';
+
+import { fromDateString, toDateString } from '../../utils/date';
 import { TAG_MAX, TITLE_MAX } from '../../utils/taskValidation';
 
 const FLIP_DURATION = 600;
@@ -45,16 +48,6 @@ function Field({ label, error, children }: { label: string; error?: string; chil
             <Text style={[formStyles.label, { color: colors.textMuted }]}>{label}</Text>
             {children}
             {error ? <Text style={[formStyles.error, { color: colors.danger }]}>{error}</Text> : null}
-        </View>
-    );
-}
-
-function PickerRow({ label, children }: { label: string; children: React.ReactNode }) {
-    const { colors } = useTheme();
-    return (
-        <View style={[formStyles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[formStyles.pickerLabel, { color: colors.text }]}>{label}</Text>
-            {children}
         </View>
     );
 }
@@ -88,6 +81,7 @@ function AddTaskForm({
     const [formTitle, setFormTitle] = useState('');
     const [tag, setTag] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
+    const [color, setColor] = useState<TaskColorKey>(DEFAULT_TASK_COLOR);
     const [date, setDate] = useState(initialDate ?? toDateString(new Date()));
     const [start, setStart] = useState('09:00');
     const [end, setEnd] = useState<string | null>(null);
@@ -102,6 +96,7 @@ function AddTaskForm({
             setFormTitle('');
             setTag('');
             setPriority('medium');
+            setColor(DEFAULT_TASK_COLOR);
             setDate(toDateString(new Date()));
             setStart('09:00');
             setEnd(null);
@@ -132,6 +127,7 @@ function AddTaskForm({
             end: end ?? undefined,
             tag,
             priority,
+            color,
             outdoor,
             subtasks: pending ? [...subtasks, { title: pending, done: false }] : subtasks,
         };
@@ -147,8 +143,8 @@ function AddTaskForm({
     const inputStyle = (hasError: boolean) => [
         formStyles.input,
         {
-            backgroundColor: colors.surface,
-            borderColor: hasError ? colors.danger : colors.border,
+            backgroundColor: colors.field,
+            borderColor: hasError ? colors.danger : 'transparent',
             color: colors.text,
         },
     ];
@@ -210,8 +206,12 @@ function AddTaskForm({
                     </View>
                 </Field>
 
-                <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
-                    <PickerRow label="Date">
+                <Field label="Color">
+                    <ColorPicker value={color} onChange={setColor} />
+                </Field>
+
+                <Field label="Date & Time" error={errors.date ?? errors.start ?? errors.end}>
+                    <View style={[formStyles.box, { backgroundColor: colors.field }]}>
                         <DateTimePicker
                             value={fromDateString(date)}
                             mode="date"
@@ -220,42 +220,14 @@ function AddTaskForm({
                             themeVariant={pickerTheme}
                             onValueChange={(_, d) => { setDate(toDateString(d)); clearError('date'); }}
                         />
-                    </PickerRow>
-                    <DateTimePicker
-                        value={fromTimeString(start)}
-                        mode="time"
-                        display="compact"
-                        themeVariant={pickerTheme}
-                        onValueChange={(_, d) => { setStart(toTimeString(d)); clearError('start'); }}
+                        <Ionicons name="calendar-outline" size={20} color={colors.textMuted} />
+                    </View>
+                    <TimeRangeRow
+                        start={start}
+                        end={end}
+                        onChangeStart={v => { setStart(v); clearError('start'); }}
+                        onChangeEnd={v => { setEnd(v); clearError('end'); }}
                     />
-                    {end === null ? (
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={() => setEnd(addMinutes(start, 60))}
-                            style={formStyles.addEnd}>
-                            <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-                            <Text style={{ color: colors.text }}>Add end time</Text>
-                        </Pressable>
-                    ) : (
-                        <PickerRow label="End">
-                            <View style={formStyles.endControls}>
-                                <DateTimePicker
-                                    value={fromTimeString(end)}
-                                    mode="time"
-                                    display="compact"
-                                    themeVariant={pickerTheme}
-                                    onValueChange={(_, d) => { setEnd(toTimeString(d)); clearError('end'); }}
-                                />
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Remove end time"
-                                    hitSlop={8}
-                                    onPress={() => { setEnd(null); clearError('end'); }}>
-                                    <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-                                </Pressable>
-                            </View>
-                        </PickerRow>
-                    )}
                 </Field>
 
                 <Field label="Tag" error={errors.tag}>
@@ -270,7 +242,7 @@ function AddTaskForm({
                     />
                 </Field>
 
-                <View style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[formStyles.pickerRow, formStyles.switchRow, { backgroundColor: colors.field }]}>
                     <View style={formStyles.switchText}>
                         <Text style={[formStyles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
                         <Text style={[formStyles.hint, { color: colors.textMuted }]}>
@@ -314,7 +286,7 @@ function AddTaskForm({
                             accessibilityRole="button"
                             accessibilityLabel="Add subtask"
                             onPress={addSubtask}
-                            style={[formStyles.addButton, { backgroundColor: colors.surfaceAlt }]}>
+                            style={[formStyles.addButton, { backgroundColor: colors.field }]}>
                             <Ionicons name="add" size={22} color={colors.text} />
                         </Pressable>
                     </View>
@@ -341,6 +313,7 @@ interface Props {
     subtitle?: string;
     style?: StyleProp<ViewStyle>;
     children: React.ReactNode;
+    headerRight?: React.ReactNode;
 }
 
 export function FlippableNotebookCard({
@@ -351,6 +324,7 @@ export function FlippableNotebookCard({
     subtitle,
     style,
     children,
+    headerRight,
 }: Props) {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
@@ -423,6 +397,7 @@ export function FlippableNotebookCard({
                     style={[styles.face, { backgroundColor: colors.surface }, frontStyle]}>
                     <Rings />
                     <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                    {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
                     {subtitle ? (
                         <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
                     ) : null}
@@ -507,12 +482,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    headerRight: { position: 'absolute', top: spacing.xl + spacing.sm, right: spacing.lg, zIndex: 1 },
 });
 
 const formStyles = StyleSheet.create({
     content: { paddingTop: spacing.md, paddingBottom: spacing.xl },
-    field: { marginBottom: spacing.lg, gap: spacing.sm },
-    label: { fontSize: fontSize.caption + 1, fontWeight: '600', textTransform: 'uppercase' },
+    field: { marginBottom: spacing.xl, gap: spacing.sm },
+    label: { fontSize: fontSize.body - 1, fontWeight: '700' },
     error: { fontSize: fontSize.caption + 1 },
     input: {
         borderWidth: 1,
@@ -536,11 +512,19 @@ const formStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         minHeight: 48,
+    },
+    box: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 48,
+        paddingLeft: spacing.xs,
+        paddingRight: spacing.md,
+        borderRadius: radius.md,
     },
     pickerLabel: { fontSize: fontSize.body },
     endControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

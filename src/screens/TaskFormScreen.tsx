@@ -16,14 +16,17 @@ import type { RootStackParamList } from '../types/navigation';
 import type { Priority, SubtaskInput, TaskInput, ValidationErrors } from '../types/task';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
 import { PRIORITIES, PRIORITY_COLOR, PRIORITY_LABEL } from '../theme/priority';
+import { DEFAULT_TASK_COLOR, fontSize, palette, radius, spacing, type TaskColorKey } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 
 import ScreenHeader from '../components/common/ScreenHeader';
+import ColorPicker from '../components/task/ColorPicker';
+import TimeRangeRow from '../components/task/TimeRangeRow';
 
-import { addMinutes, fromDateString, fromTimeString, toDateString, toTimeString } from '../utils/date';
+import { fromDateString, toDateString } from '../utils/date';
+
 import { TAG_MAX, TITLE_MAX } from '../utils/taskValidation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskForm'>;
@@ -47,16 +50,6 @@ function Field({
     );
 }
 
-function PickerRow({ label, children }: { label: string; children: React.ReactNode }) {
-    const { colors } = useTheme();
-    return (
-        <View style={[styles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.pickerLabel, { color: colors.text }]}>{label}</Text>
-            {children}
-        </View>
-    );
-}
-
 export default function TaskFormScreen({ navigation, route }: Props) {
     const { colors, isDark } = useTheme();
     const taskId = route.params?.taskId;
@@ -67,6 +60,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const [title, setTitle] = useState(existing?.title ?? '');
     const [tag, setTag] = useState(existing?.tag ?? '');
     const [priority, setPriority] = useState<Priority>(existing?.priority ?? 'medium');
+    const [color, setColor] = useState<TaskColorKey>(existing?.color ?? DEFAULT_TASK_COLOR);
     const [date, setDate] = useState(
         existing?.date ?? route.params?.date ?? toDateString(new Date()),
     );
@@ -116,6 +110,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
             end: end ?? undefined,
             tag,
             priority,
+            color,
             outdoor,
             subtasks: pending ? [...subtasks, { title: pending, done: false }] : subtasks,
         };
@@ -136,8 +131,8 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const inputStyle = (hasError: boolean) => [
         styles.input,
         {
-            backgroundColor: colors.surface,
-            borderColor: hasError ? colors.danger : colors.border,
+            backgroundColor: colors.field,
+            borderColor: hasError ? colors.danger : 'transparent',
             color: colors.text,
         },
     ];
@@ -189,8 +184,12 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                     </View>
                 </Field>
 
-                <Field label="When" error={errors.date ?? errors.start ?? errors.end}>
-                    <PickerRow label="Date">
+                <Field label="Color">
+                    <ColorPicker value={color} onChange={setColor} />
+                </Field>
+
+                <Field label="Date & Time" error={errors.date ?? errors.start ?? errors.end}>
+                    <View style={[styles.box, { backgroundColor: colors.field }]}>
                         <DateTimePicker
                             value={fromDateString(date)}
                             mode="date"
@@ -202,51 +201,20 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                                 clearError('date');
                             }}
                         />
-                    </PickerRow>
-                    <DateTimePicker
-                        value={fromTimeString(start)}
-                        mode="time"
-                        display="compact"
-                        themeVariant={pickerTheme}
-                        onValueChange={(_, d) => {
-                            setStart(toTimeString(d));
+                        <Ionicons name="calendar-outline" size={20} color={colors.textMuted} />
+                    </View>
+                    <TimeRangeRow
+                        start={start}
+                        end={end}
+                        onChangeStart={v => {
+                            setStart(v);
                             clearError('start');
                         }}
+                        onChangeEnd={v => {
+                            setEnd(v);
+                            clearError('end');
+                        }}
                     />
-                    {end === null ? (
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={() => setEnd(addMinutes(start, 60))}
-                            style={styles.addEnd}>
-                            <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-                            <Text style={{ color: colors.text }}>Add end time</Text>
-                        </Pressable>
-                    ) : (
-                        <PickerRow label="End">
-                            <View style={styles.endControls}>
-                                <DateTimePicker
-                                    value={fromTimeString(end)}
-                                    mode="time"
-                                    display="compact"
-                                    themeVariant={pickerTheme}
-                                    onValueChange={(_, d) => {
-                                        setEnd(toTimeString(d));
-                                        clearError('end');
-                                    }}
-                                />
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Remove end time"
-                                    hitSlop={8}
-                                    onPress={() => {
-                                        setEnd(null);
-                                        clearError('end');
-                                    }}>
-                                    <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-                                </Pressable>
-                            </View>
-                        </PickerRow>
-                    )}
                 </Field>
 
                 <Field label="Tag" error={errors.tag}>
@@ -265,7 +233,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                 </Field>
 
                 <View
-                    style={[styles.pickerRow, styles.switchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    style={[styles.switchRow, { backgroundColor: colors.field }]}>
                     <View style={styles.switchText}>
                         <Text style={[styles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
                         <Text style={[styles.hint, { color: colors.textMuted }]}>
@@ -283,7 +251,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                     {subtasks.map((s, i) => (
                         <View
                             key={s.id ?? `new-${i}`}
-                            style={[styles.pickerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            style={[{ backgroundColor: colors.surface, borderColor: colors.border }]}>
                             <Text style={[styles.subtaskText, { color: colors.text }]}>{s.title}</Text>
                             <Pressable
                                 accessibilityRole="button"
@@ -309,7 +277,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                             accessibilityRole="button"
                             accessibilityLabel="Add subtask"
                             onPress={addSubtask}
-                            style={[styles.addButton, { backgroundColor: colors.surfaceAlt }]}>
+                            style={[styles.addButton, { backgroundColor: colors.field }]}>
                             <Ionicons name="add" size={22} color={colors.text} />
                         </Pressable>
                     </View>
@@ -337,11 +305,10 @@ const styles = StyleSheet.create({
     content: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
     notFound: { fontSize: fontSize.body },
-    field: { marginBottom: spacing.lg, gap: spacing.sm },
-    label: { fontSize: fontSize.caption + 1, fontWeight: '600', textTransform: 'uppercase' },
+    field: { marginBottom: spacing.xl, gap: spacing.sm },
+    label: { fontSize: fontSize.body - 1, fontWeight: '700' },
     error: { fontSize: fontSize.caption + 1 },
     input: {
-        borderWidth: 1,
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.md,
@@ -358,25 +325,22 @@ const styles = StyleSheet.create({
     },
     chipInactive: { opacity: 0.55 },
     chipText: { color: palette.bistre, fontWeight: '600', fontSize: fontSize.body - 2 },
-    pickerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderWidth: 1,
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        minHeight: 48,
-    },
     pickerLabel: { fontSize: fontSize.body },
-    endControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    addEnd: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
     switchRow: { marginBottom: spacing.lg },
     switchText: { flex: 1 },
     hint: { fontSize: fontSize.caption + 1, marginTop: 2 },
     subtaskText: { flex: 1, fontSize: fontSize.body },
     subtaskInputRow: { flexDirection: 'row', gap: spacing.sm },
     subtaskInput: { flex: 1 },
+    box: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 48,
+        paddingLeft: spacing.xs,
+        paddingRight: spacing.md,
+        borderRadius: radius.md,
+    },
     addButton: {
         width: 48,
         alignItems: 'center',
