@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,6 +7,8 @@ import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
 
 import { useTheme } from '../theme/ThemeProvider';
 import { fontSize, palette, radius, spacing } from '../theme/tokens';
+
+import type { ThemeMode } from '../storage/themePreference';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -26,7 +28,7 @@ function SettingRow({ icon, label, right, last }: RowProps) {
                 !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
             ]}>
             <View style={[styles.iconWrap, { backgroundColor: palette.raelynn }]}>
-                <Ionicons name={icon} size={18} color={colors.text} />
+                <Ionicons name={icon} size={18} color={palette.bistre} />
             </View>
             <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
             {right}
@@ -44,6 +46,35 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
     );
 }
 
+const MODES: { key: ThemeMode; label: string }[] = [
+    { key: 'system', label: 'System' },
+    { key: 'light', label: 'Light' },
+    { key: 'dark', label: 'Dark' },
+];
+
+function ModePicker() {
+    const { colors, mode, setMode } = useTheme();
+    return (
+        <View style={styles.modeRow}>
+            {MODES.map(m => {
+                const active = m.key === mode;
+                return (
+                    <Pressable
+                        key={m.key}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        onPress={() => setMode(m.key)}
+                        style={[styles.modeChip, { backgroundColor: active ? colors.text : colors.field }]}>
+                        <Text style={[styles.modeText, { color: active ? colors.onInverse : colors.text }]}>
+                            {m.label}
+                        </Text>
+                    </Pressable>
+                );
+            })}
+        </View>
+    );
+}
+
 export default function SettingsScreen() {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
@@ -55,7 +86,7 @@ export default function SettingsScreen() {
     const track = { false: colors.border, true: colors.primary };
 
     return (
-        <View style={[styles.root, { backgroundColor: palette.raelynn }]}>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
@@ -64,6 +95,12 @@ export default function SettingsScreen() {
                     paddingBottom: TAB_BAR_CLEARANCE + spacing.lg,
                 }}>
                 <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+
+                <Group title="Appearance">
+                    <View style={styles.appearance}>
+                        <ModePicker />
+                    </View>
+                </Group>
 
                 <Group title="Tasks">
                     <SettingRow
@@ -129,4 +166,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     label: { flex: 1, fontSize: fontSize.body },
+    appearance: { paddingVertical: spacing.md },
+    modeRow: { flexDirection: 'row', gap: spacing.sm },
+    modeChip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm + 2, borderRadius: radius.pill },
+    modeText: { fontSize: fontSize.body - 1, fontWeight: '700' },
 });

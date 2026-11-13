@@ -1,6 +1,6 @@
 export const palette = {
     white: '#FFFFFF',
-    
+
     peachPuff: '#FFDAB9',
     petalPink: '#FFD1DC',
     matteCoral: '#E2725B',
@@ -24,6 +24,8 @@ export const palette = {
 } as const;
 
 export interface ThemeColors {
+    background: string;
+    onInverse: string;
     surface: string;
     surfaceAlt: string;
     text: string;
@@ -51,6 +53,8 @@ export interface ThemeColors {
 }
 
 export const lightColors: ThemeColors = {
+    background: palette.raelynn,
+    onInverse: palette.raelynn,
     surface: palette.mutedOffWhite,
     surfaceAlt: palette.peachPuff,
     text: palette.bistre,
@@ -73,16 +77,18 @@ export const lightColors: ThemeColors = {
     ring: palette.bistre,
     field: palette.linenCream,
     agendaInk: '#3D2B1F',
-    agendaInkMuted: '#7A6657',
+    agendaInkMuted: '#6B5546',
     agendaOverdue: '#B5402B',
 };
 
 export const darkColors: ThemeColors = {
-    surface: palette.bistre,
-    surfaceAlt: '#4D392C', // derived
+    background: '#2A1D15',
+    onInverse: palette.bistre,
+    surface: '#4A372B',
+    surfaceAlt: '#5C4636', // derived
     text: palette.linenCream,
     textMuted: palette.subtlePurple,
-    border: '#5A4535', // derived
+    border: '#6B5342', // derived
     primary: palette.matteCoral,
     onPrimary: '#2A1D15', // derived
     success: palette.laurelGreen,
@@ -93,15 +99,15 @@ export const darkColors: ThemeColors = {
     onDanger: '#2A1D15', // derived
     weatherCard: '#4A4258', // derived
     onWeatherCard: palette.linenCream,
-    accentSoft: palette.petalPink,
+    accentSoft: palette.armyBrown,
     priorityHigh: palette.matteCoral,
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
     ring: palette.raelynn,
-    field: '#4D392C',
-    agendaInk: '#D4B8A8',
-    agendaInkMuted: '#C4A090',
-    agendaOverdue: '#E07060',
+    field: '#5C4636',
+    agendaInk: '#3D2B1F',
+    agendaInkMuted: '#6B5546',
+    agendaOverdue: '#B5402B',
 };
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
@@ -118,6 +124,17 @@ export const TASK_COLORS = {
     red: palette.red,
     pink: palette.pink,
 } as const;
+
+export const TASK_DOT_COLORS: Record<TaskColorKey, string> = {
+    purple: '#8E6FD1',
+    indigo: '#6672D6',
+    blue: '#4A90D9',
+    green: '#4FA36A',
+    yellow: '#D9A400',
+    orange: '#E8821A',
+    red: '#D64545',
+    pink: '#E0709A',
+};
 
 export type TaskColorKey = keyof typeof TASK_COLORS;
 export const TASK_COLOR_KEYS = Object.keys(TASK_COLORS) as TaskColorKey[];
