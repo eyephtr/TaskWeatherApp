@@ -72,3 +72,15 @@ describe('sorting', () => {
         expect(sortByDateTime(input).map(t => t.id)).toEqual(['a', 'b', 'c']);
     });
 });
+
+describe('filters with priority none and colors', () => {
+    const mixed = [
+        make({ id: 'h', priority: 'high', done: false }),
+        make({ id: 'n', priority: 'none', done: true, color: 'pink' }),
+    ];
+
+    it('does not drop tasks with priority none', () => {
+        expect(filterTasks(mixed, { status: 'all', query: '' }).map(t => t.id)).toEqual(['h', 'n']);
+        expect(filterTasks(mixed, { status: 'done', query: '' }).map(t => t.id)).toEqual(['n']);
+    });
+});
