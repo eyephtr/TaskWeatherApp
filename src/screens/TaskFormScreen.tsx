@@ -7,6 +7,7 @@ import {
     Text,
     TextInput,
     View,
+    type LayoutChangeEvent,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
@@ -27,27 +28,35 @@ import TimeRangeRow from '../components/task/TimeRangeRow';
 
 import { fromDateString, toDateString } from '../utils/date';
 
-import { TAG_MAX, TITLE_MAX } from '../utils/taskValidation';
+import { TAG_MAX, TITLE_MAX, validateTaskInput } from '../utils/taskValidation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskForm'>;
+type ScrollViewRef = React.ComponentRef<typeof ScrollView>;
 
 function Field({
     label,
     error,
     children,
+    onLayout,
 }: {
     label: string;
     error?: string;
     children: React.ReactNode;
+    onLayout?: (event: LayoutChangeEvent) => void;
 }) {
     const { colors } = useTheme();
     return (
-        <View style={styles.field}>
+        <View style={styles.field} onLayout={onLayout}>
             <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
             {children}
             {error ? <Text style={[styles.error, { color: colors.danger }]}>{error}</Text> : null}
         </View>
     );
+}
+
+function Divider() {
+    const { colors } = useTheme();
+    return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 export default function TaskFormScreen({ navigation, route }: Props) {
@@ -74,6 +83,8 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     const [errors, setErrors] = useState<ValidationErrors>({});
 
     const savedRef = useRef(false);
+    const scrollViewRef = useRef<ScrollViewRef>(null);
+    const fieldOffsets = useRef<Record<string, number>>({});
 
     if (taskId && !existing) {
         return (
@@ -115,38 +126,65 @@ export default function TaskFormScreen({ navigation, route }: Props) {
             subtasks: pending ? [...subtasks, { title: pending, done: false }] : subtasks,
         };
 
+        const validationErrors = validateTaskInput(input);
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+
+            const firstErrorKey = Object.keys(validationErrors)[0];
+            const lookupKey = firstErrorKey === 'start' || firstErrorKey === 'end' ? 'date' : firstErrorKey;
+            const yOffset = fieldOffsets.current[lookupKey];
+            if (yOffset !== undefined && scrollViewRef.current) {
+                scrollViewRef.current.scrollTo({ y: Math.max(0, yOffset - 20), animated: true });
+            }
+            return;
+        }
+
         const result = taskId ? updateTask(taskId, input) : addTask(input);
-        if (result.ok) {
-            savedRef.current = true;
-            navigation.goBack();
+
+        if (result && typeof result === 'object' && 'ok' in result) {
+            if (result.ok) {
+                savedRef.current = true;
+                navigation.goBack();
+                return;
+            }
+            if (result.notFound) {
+                navigation.goBack();
+                return;
+            }
+            if (result.errors) {
+                setErrors(result.errors);
+            }
             return;
         }
-        if (result.notFound) {
-            navigation.goBack();
-            return;
-        }
-        setErrors(result.errors);
+
+        savedRef.current = true;
+        navigation.goBack();
     };
 
     const inputStyle = (hasError: boolean) => [
         styles.input,
-        {
-            backgroundColor: colors.field,
-            borderColor: hasError ? colors.danger : 'transparent',
-            color: colors.text,
-        },
+        { backgroundColor: colors.field, color: colors.text },
+        hasError && [styles.errorBorder, { borderColor: colors.danger }],
     ];
+
     const pickerTheme = isDark ? 'dark' : 'light';
+    const hasTimeError = Boolean(errors.start || errors.end);
 
     return (
-        <View style={[styles.root, { backgroundColor: palette.linenCream }]}>
+        <View style={[styles.root, { backgroundColor: palette.mutedOffWhite }]}>
             <ScreenHeader variant="close" title={taskId ? 'Edit Task' : 'New Task'} />
             <ScrollView
-                style={[styles.root, { backgroundColor: palette.raelynn }]}
+                ref={scrollViewRef}
+                style={[styles.root, { backgroundColor: palette.mutedOffWhite }]}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 automaticallyAdjustKeyboardInsets>
-                <Field label="Title" error={errors.title}>
+                <Field
+                    label="Title"
+                    error={errors.title}
+                    onLayout={e => {
+                        fieldOffsets.current.title = e.nativeEvent.layout.y;
+                    }}>
                     <TextInput
                         accessibilityLabel="Task title"
                         value={title}
@@ -188,8 +226,18 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                     <ColorPicker value={color} onChange={setColor} />
                 </Field>
 
-                <Field label="Date & Time" error={errors.date ?? errors.start ?? errors.end}>
-                    <View style={[styles.box, { backgroundColor: colors.field }]}>
+                <Field
+                    label="Date & Time"
+                    error={errors.date ?? errors.start ?? errors.end}
+                    onLayout={e => {
+                        fieldOffsets.current.date = e.nativeEvent.layout.y;
+                    }}>
+                    <View
+                        style={[
+                            styles.box,
+                            { backgroundColor: colors.field },
+                            errors.date && [styles.errorBorder, { borderColor: colors.danger }],
+                        ]}>
                         <DateTimePicker
                             value={fromDateString(date)}
                             mode="date"
@@ -203,21 +251,32 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                         />
                         <Ionicons name="calendar-outline" size={20} color={colors.textMuted} />
                     </View>
-                    <TimeRangeRow
-                        start={start}
-                        end={end}
-                        onChangeStart={v => {
-                            setStart(v);
-                            clearError('start');
-                        }}
-                        onChangeEnd={v => {
-                            setEnd(v);
-                            clearError('end');
-                        }}
-                    />
+                    <View
+                        style={[
+                            styles.timeWrapper,
+                            hasTimeError && [styles.errorBorder, { borderColor: colors.danger }],
+                        ]}>
+                        <TimeRangeRow
+                            start={start}
+                            end={end}
+                            onChangeStart={v => {
+                                setStart(v);
+                                clearError('start');
+                            }}
+                            onChangeEnd={v => {
+                                setEnd(v);
+                                clearError('end');
+                            }}
+                        />
+                    </View>
                 </Field>
 
-                <Field label="Tag" error={errors.tag}>
+                <Field
+                    label="Tag"
+                    error={errors.tag}
+                    onLayout={e => {
+                        fieldOffsets.current.tag = e.nativeEvent.layout.y;
+                    }}>
                     <TextInput
                         accessibilityLabel="Task tag"
                         value={tag}
@@ -232,26 +291,11 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                     />
                 </Field>
 
-                <View
-                    style={[styles.switchRow, { backgroundColor: colors.field }]}>
-                    <View style={styles.switchText}>
-                        <Text style={[styles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
-                        <Text style={[styles.hint, { color: colors.textMuted }]}>
-                            Get a weather warning on this task
-                        </Text>
-                    </View>
-                    <Switch
-                        value={outdoor}
-                        onValueChange={setOutdoor}
-                        trackColor={{ false: colors.border, true: colors.primary }}
-                    />
-                </View>
-
                 <Field label="Subtasks">
                     {subtasks.map((s, i) => (
                         <View
                             key={s.id ?? `new-${i}`}
-                            style={[{ backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            style={[styles.subtaskItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             <Text style={[styles.subtaskText, { color: colors.text }]}>{s.title}</Text>
                             <Pressable
                                 accessibilityRole="button"
@@ -283,6 +327,22 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                     </View>
                 </Field>
 
+                <View style={[styles.switchRow, { backgroundColor: colors.field }]}>
+                    <View style={styles.switchText}>
+                        <Text style={[styles.pickerLabel, { color: colors.text }]}>Outdoor task</Text>
+                        <Text style={[styles.hint, { color: colors.textMuted }]}>
+                            Get a weather warning on this task
+                        </Text>
+                    </View>
+                    <Switch
+                        value={outdoor}
+                        onValueChange={setOutdoor}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                    />
+                </View>
+
+                <Divider />
+
                 <Pressable
                     accessibilityRole="button"
                     onPress={handleSave}
@@ -293,7 +353,7 @@ export default function TaskFormScreen({ navigation, route }: Props) {
                 </Pressable>
 
                 <Pressable accessibilityRole="button" onPress={navigation.goBack} style={styles.cancel}>
-                    <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>Cancel</Text>
+                    <Text style={[styles.cancelText, { color: colors.textMuted }]}>Cancel</Text>
                 </Pressable>
             </ScrollView>
         </View>
@@ -308,6 +368,7 @@ const styles = StyleSheet.create({
     field: { marginBottom: spacing.xl, gap: spacing.sm },
     label: { fontSize: fontSize.body - 1, fontWeight: '700' },
     error: { fontSize: fontSize.caption + 1 },
+    errorBorder: { borderWidth: 1.5 },
     input: {
         borderRadius: radius.md,
         paddingHorizontal: spacing.md,
@@ -326,9 +387,35 @@ const styles = StyleSheet.create({
     chipInactive: { opacity: 0.55 },
     chipText: { color: palette.bistre, fontWeight: '600', fontSize: fontSize.body - 2 },
     pickerLabel: { fontSize: fontSize.body },
-    switchRow: { marginBottom: spacing.lg },
-    switchText: { flex: 1 },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: radius.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.md,
+        marginBottom: spacing.xl,
+    },
+    switchText: {
+        flex: 1,
+        paddingRight: spacing.md,
+    },
     hint: { fontSize: fontSize.caption + 1, marginTop: 2 },
+    divider: {
+        height: StyleSheet.hairlineWidth,
+        marginVertical: spacing.lg,
+    },
+    timeWrapper: {
+        borderRadius: radius.md,
+    },
+    subtaskItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: StyleSheet.hairlineWidth,
+    },
     subtaskText: { flex: 1, fontSize: fontSize.body },
     subtaskInputRow: { flexDirection: 'row', gap: spacing.sm },
     subtaskInput: { flex: 1 },
@@ -355,4 +442,5 @@ const styles = StyleSheet.create({
     },
     saveText: { fontSize: fontSize.body, fontWeight: '700' },
     cancel: { alignItems: 'center', paddingVertical: spacing.lg },
+    cancelText: { fontSize: fontSize.body },
 });
