@@ -35,27 +35,23 @@ import { getWeatherWarning } from '../utils/weatherWarning';
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskDetail'>;
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-function Divider() {
+function Rings() {
     const { colors } = useTheme();
-    return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
+    return (
+        <View style={styles.rings} pointerEvents="none">
+            {Array.from({ length: 5 }).map((_, i) => (
+                <View key={i} style={[styles.ring, { backgroundColor: colors.ring }]} />
+            ))}
+        </View>
+    );
 }
 
 function SectionTitle({ children, right }: { children: string; right?: string }) {
     const { colors } = useTheme();
     return (
         <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{children}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{children}</Text>
             {right ? <Text style={[styles.sectionRight, { color: colors.textMuted }]}>{right}</Text> : null}
-        </View>
-    );
-}
-
-function Pill({ text, icon, style }: { text: string; icon?: IconName; style?: object }) {
-    const { colors } = useTheme();
-    return (
-        <View style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }, style]}>
-            {icon ? <Ionicons name={icon} size={20} color={colors.text} /> : null}
-            <Text style={[styles.pillText, { color: colors.text }]}>{text}</Text>
         </View>
     );
 }
@@ -69,17 +65,7 @@ function Chip({ text, bg, fg, icon }: { text: string; bg: string; fg: string; ic
     );
 }
 
-function PropertyRow({ label, children }: { label: string; children: React.ReactNode }) {
-    const { colors } = useTheme();
-    return (
-        <View style={styles.propRow}>
-            <Text style={[styles.propLabel, { color: colors.text }]}>{label}</Text>
-            <View style={styles.propValue}>{children}</View>
-        </View>
-    );
-}
-
-function AddSubtaskRow({ onAdd, bordered }: { onAdd: (title: string) => void; bordered?: boolean }) {
+function AddSubtaskRow({ onAdd }: { onAdd: (title: string) => void }) {
     const { colors } = useTheme();
     const [text, setText] = useState('');
 
@@ -93,15 +79,8 @@ function AddSubtaskRow({ onAdd, bordered }: { onAdd: (title: string) => void; bo
     };
 
     return (
-        <View
-            style={[
-                styles.addRow,
-                bordered && [
-                    styles.subtaskRow,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                ],
-            ]}>
-            <View style={[styles.squareBox, { borderColor: colors.textMuted }]} />
+        <View style={[styles.addRow, { backgroundColor: colors.field }]}>
+            <Ionicons name="add" size={20} color={colors.textMuted} style={styles.addIcon} />
             <TextInput
                 accessibilityLabel="Add subtask"
                 value={text}
@@ -109,7 +88,7 @@ function AddSubtaskRow({ onAdd, bordered }: { onAdd: (title: string) => void; bo
                 onSubmitEditing={submit}
                 blurOnSubmit={false}
                 returnKeyType="done"
-                placeholder="Add subtask"
+                placeholder="Add a subtask..."
                 placeholderTextColor={colors.textMuted}
                 style={[styles.addInput, { color: colors.text }]}
             />
@@ -207,108 +186,123 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 automaticallyAdjustKeyboardInsets>
-                <Text style={[styles.tagLabel, { color: colors.primary }]}>{task.tag}</Text>
 
-                <View style={styles.titleRow}>
+                {/* Hero Card */}
+                <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <Rings />
+
+                    <View style={styles.heroTopRow}>
+                        <View style={[styles.tagBadge, { backgroundColor: colors.field }]}>
+                            <Text style={[styles.tagLabel, { color: colors.primary }]}>{task.tag || 'General'}</Text>
+                        </View>
+                        <Pressable
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: task.done }}
+                            accessibilityLabel={`Complete ${task.title}`}
+                            hitSlop={8}
+                            onPress={() => toggleDone(task.id)}
+                            style={[
+                                styles.doneCircle,
+                                task.done
+                                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                                    : { borderColor: colors.textMuted },
+                            ]}>
+                            {task.done ? <Ionicons name="checkmark" size={18} color={palette.linenCream} /> : null}
+                        </Pressable>
+                    </View>
+
                     <Text style={[styles.title, { color: colors.text }, task.done && styles.titleDone]}>
                         {task.title}
                     </Text>
-                    <Pressable
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: task.done }}
-                        accessibilityLabel={`Complete ${task.title}`}
-                        hitSlop={8}
-                        onPress={() => toggleDone(task.id)}
-                        style={[
-                            styles.doneCircle,
-                            task.done
-                                ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                                : { borderColor: colors.text },
-                        ]}>
-                        {task.done ? <Ionicons name="checkmark" size={20} color={palette.linenCream} /> : null}
-                    </Pressable>
-                </View>
 
-                <Divider />
-
-                <SectionTitle>Date & Time</SectionTitle>
-                <Pill icon="calendar-outline" text={formatDate(task.date)} />
-                <View style={styles.timeRow}>
-                    <Pill text={task.start} style={styles.timePill} />
-                    {task.end ? <Pill text={task.end} style={styles.timePill} /> : null}
+                    <View style={styles.badgeRow}>
+                        <Chip text={status.text} bg={status.bg} fg={status.fg} />
+                        <Chip
+                            text={PRIORITY_LABEL[task.priority]}
+                            bg={PRIORITY_COLOR[task.priority]}
+                            fg={palette.bistre}
+                        />
+                        {task.outdoor ? (
+                            <Chip text="Outdoor" bg={colors.success} fg={colors.onSuccess} icon="partly-sunny-outline" />
+                        ) : null}
+                    </View>
                 </View>
 
                 {warning ? (
-                    <View style={styles.warning}>
+                    <View style={styles.warningContainer}>
                         <StatusBanner title={warning.label} message={warning.message} />
                     </View>
                 ) : null}
 
-                <Divider />
-
-                <PropertyRow label="Status">
-                    <Chip text={status.text} bg={status.bg} fg={status.fg} />
-                </PropertyRow>
-                <PropertyRow label="Priority">
-                    <Chip
-                        text={PRIORITY_LABEL[task.priority]}
-                        bg={PRIORITY_COLOR[task.priority]}
-                        fg={palette.bistre}
-                    />
-                </PropertyRow>
-                <PropertyRow label="Tags">
-                    <Chip text={task.tag} bg={palette.subtlePurple} fg={palette.bistre} />
-                    {task.outdoor ? (
-                        <Chip text="Outdoor" bg={colors.success} fg={colors.onSuccess} icon="partly-sunny-outline" />
-                    ) : null}
-                </PropertyRow>
-
-                {task.subtasks.length > 0 ? (
-                    <>
-                        <Divider />
-                        <SectionTitle right={`${doneSubtasks}/${task.subtasks.length}`}>Subtasks</SectionTitle>
-                        <View style={styles.subtasks}>
-                            {task.subtasks.map(s => (
-                                <View
-                                    key={s.id}
-                                    style={[
-                                        styles.subtaskRow,
-                                        { backgroundColor: colors.surface, borderColor: colors.border },
-                                    ]}>
-                                    <Check
-                                        checked={s.done}
-                                        onPress={() => toggleSubtask(task.id, s.id)}
-                                        label={s.title}
-                                        size={24}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.subtaskText,
-                                            { color: s.done ? colors.textMuted : colors.text },
-                                            s.done && styles.titleDone,
-                                        ]}>
-                                        {s.title}
-                                    </Text>
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`Remove ${s.title}`}
-                                        hitSlop={8}
-                                        onPress={() => removeSubtask(s.id)}>
-                                        <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-                                    </Pressable>
-                                </View>
-                            ))}
-                            <AddSubtaskRow bordered onAdd={addSubtask} />
+                <SectionTitle>SCHEDULE</SectionTitle>
+                <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={styles.infoRow}>
+                        <View style={[styles.infoIconBox, { backgroundColor: colors.field }]}>
+                            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
                         </View>
-                    </>
-                ) : (
-                    <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
-                        <AddSubtaskRow onAdd={addSubtask} />
+                        <View style={styles.infoTexts}>
+                            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Date</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(task.date)}</Text>
+                        </View>
                     </View>
-                )}
+
+                    <View style={[styles.innerDivider, { backgroundColor: colors.border }]} />
+
+                    <View style={styles.infoRow}>
+                        <View style={[styles.infoIconBox, { backgroundColor: colors.field }]}>
+                            <Ionicons name="time-outline" size={20} color={colors.primary} />
+                        </View>
+                        <View style={styles.infoTexts}>
+                            <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Time</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>
+                                {task.start} {task.end ? `- ${task.end}` : ''}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                <SectionTitle right={task.subtasks.length > 0 ? `${doneSubtasks}/${task.subtasks.length}` : undefined}>
+                    SUBTASKS
+                </SectionTitle>
+                <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    {task.subtasks.length > 0 ? (
+                        <View style={styles.subtasksList}>
+                            {task.subtasks.map((s, index) => (
+                                <React.Fragment key={s.id}>
+                                    {index > 0 ? <View style={[styles.innerDivider, { backgroundColor: colors.border }]} /> : null}
+                                    <View style={styles.subtaskRow}>
+                                        <Check
+                                            checked={s.done}
+                                            onPress={() => toggleSubtask(task.id, s.id)}
+                                            label={s.title}
+                                            size={22}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.subtaskText,
+                                                { color: s.done ? colors.textMuted : colors.text },
+                                                s.done && styles.titleDone,
+                                            ]}>
+                                            {s.title}
+                                        </Text>
+                                        <Pressable
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Remove ${s.title}`}
+                                            hitSlop={8}
+                                            onPress={() => removeSubtask(s.id)}>
+                                            <Ionicons name="close-circle-outline" size={20} color={colors.textMuted} />
+                                        </Pressable>
+                                    </View>
+                                </React.Fragment>
+                            ))}
+                            <View style={[styles.innerDivider, { backgroundColor: colors.border }]} />
+                        </View>
+                    ) : null}
+                    <AddSubtaskRow onAdd={addSubtask} />
+                </View>
 
                 <Pressable accessibilityRole="button" onPress={confirmDelete} style={styles.deleteButton}>
-                    <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
                     <Text style={[styles.deleteText, { color: colors.danger }]}>Delete task</Text>
                 </Pressable>
             </ScrollView>
@@ -364,86 +358,135 @@ const styles = StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
     notFound: { fontSize: fontSize.body },
 
-    tagLabel: { fontSize: fontSize.body, fontWeight: '600' },
-    titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.xs },
-    title: { flex: 1, fontSize: fontSize.display - 4, fontWeight: '700' },
-    titleDone: { textDecorationLine: 'line-through' },
+    heroCard: {
+        marginTop: spacing.sm,
+        borderRadius: radius.lg,
+        paddingTop: spacing.xl + spacing.sm,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        gap: spacing.md,
+        shadowColor: palette.bistre,
+        shadowOpacity: 0.14,
+        shadowRadius: 8,
+        shadowOffset: { width: 2, height: 4 },
+        elevation: 5,
+    },
+    rings: {
+        position: 'absolute',
+        top: -10,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.xl + spacing.md,
+    },
+    ring: {
+        width: 15,
+        height: 30,
+        borderRadius: 6,
+    },
+    heroTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    tagBadge: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: radius.pill,
+    },
+    tagLabel: { fontSize: fontSize.caption + 1, fontWeight: '700' },
+
+    title: { 
+        fontSize: fontSize.display - 6, 
+        fontWeight: '700', 
+        lineHeight: 32, 
+        textAlign: 'center', // จัดชื่องานให้อยู่กึ่งกลาง
+        marginVertical: spacing.sm 
+    },
+    titleDone: { textDecorationLine: 'line-through', opacity: 0.6 },
+
     doneCircle: {
-        width: 32,
-        height: 32,
+        width: 30,
+        height: 30,
         borderRadius: radius.pill,
         borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: spacing.sm,
     },
-    divider: { height: StyleSheet.hairlineWidth, marginVertical: spacing.lg },
+
+    badgeRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center', // จัดกลุ่มแท็กให้อยู่กึ่งกลางใต้ชื่อ
+        gap: spacing.sm,
+        marginTop: spacing.xs,
+    },
 
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: spacing.md,
+        marginTop: spacing.xl,
+        marginBottom: spacing.xs,
+        paddingHorizontal: spacing.xs,
     },
-    sectionTitle: { fontSize: fontSize.body, fontWeight: '700' },
-    sectionRight: { fontSize: fontSize.body, fontWeight: '600' },
+    sectionTitle: { fontSize: fontSize.caption, fontWeight: '700', letterSpacing: 0.5 },
+    sectionRight: { fontSize: fontSize.caption, fontWeight: '600' },
 
-    pill: {
+    infoCard: {
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
+    infoRow: {
         flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        gap: spacing.md,
+    },
+    infoIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: radius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: spacing.sm,
-        minHeight: 52,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.pill,
-        borderWidth: 1,
     },
-    pillText: { fontSize: fontSize.body, fontWeight: '600' },
-    timeRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
-    timePill: { flex: 1 },
+    infoTexts: { flex: 1, gap: 2 },
+    infoLabel: { fontSize: fontSize.caption },
+    infoValue: { fontSize: fontSize.body, fontWeight: '600' },
+    innerDivider: { height: StyleSheet.hairlineWidth, width: '100%' },
 
-    propRow: {
+    subtasksList: {
+        width: '100%',
+    },
+    subtaskRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: spacing.sm,
-        minHeight: 48,
+        padding: spacing.md,
+        gap: spacing.md,
     },
-    propLabel: { fontSize: fontSize.body },
-    propValue: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: spacing.sm },
+    subtaskText: { flex: 1, fontSize: fontSize.body },
+
+    addRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        minHeight: 50,
+    },
+    addIcon: { marginRight: spacing.sm },
+    addInput: { flex: 1, fontSize: fontSize.body },
+
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        paddingHorizontal: spacing.md + 2,
-        paddingVertical: spacing.sm - 1,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
         borderRadius: radius.pill,
     },
-    chipText: { fontSize: fontSize.body - 2, fontWeight: '600' },
-
-    subtasks: { gap: spacing.sm },
-    subtaskRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        minHeight: 52,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.md,
-        borderWidth: 1,
-    },
-    subtaskText: { flex: 1, fontSize: fontSize.body },
-
-    addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    squareBox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2 },
-    addInput: { flex: 1, fontSize: fontSize.body, paddingVertical: spacing.md },
-
-    emptyCard: {
-        marginTop: spacing.lg,
-        borderRadius: radius.lg + 8,
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.xs,
-        paddingBottom: spacing.md,
-    },
+    chipText: { fontSize: fontSize.caption + 1, fontWeight: '600' },
 
     deleteButton: {
         flexDirection: 'row',
@@ -451,7 +494,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: spacing.sm,
         paddingVertical: spacing.lg,
-        marginTop: spacing.xl,
+        marginTop: spacing.xl * 1.5,
+        borderRadius: radius.pill,
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
     deleteText: { fontSize: fontSize.body, fontWeight: '600' },
 
@@ -476,5 +522,5 @@ const styles = StyleSheet.create({
     },
     menuText: { fontSize: fontSize.body, fontWeight: '500' },
     menuDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: spacing.md },
-    warning: { marginTop: spacing.lg },
+    warningContainer: { marginTop: spacing.lg },
 });
