@@ -78,6 +78,7 @@ export default function TaskListScreen() {
     const allTasks = useTaskStore(s => s.tasks);
     const toggleDone = useTaskStore(s => s.toggleDone);
     const toggleSubtask = useTaskStore(s => s.toggleSubtask);
+    const deleteTask = useTaskStore(s => s.deleteTask);
     const storeStatus = useTaskStore(s => s.status);
     const error = useTaskStore(s => s.error);
     const clearError = useTaskStore(s => s.clearError);
@@ -115,6 +116,11 @@ export default function TaskListScreen() {
             setCalendarStart(selected);
         }
         setMode(next);
+    };
+
+    const handleDelete = (id: string) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        deleteTask(id);
     };
 
     const closeSearch = () => {
@@ -296,7 +302,7 @@ export default function TaskListScreen() {
                 </View>
             )}
 
-                        <FlippableNotebookCard
+            <FlippableNotebookCard
                 isFlipped={isFlipped}
                 onClose={() => setIsFlipped(false)}
                 initialDate={selected}
@@ -331,6 +337,7 @@ export default function TaskListScreen() {
                                             onToggle={() => toggleDone(t.id)}
                                             onToggleSubtask={subtaskId => toggleSubtask(t.id, subtaskId)}
                                             onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
+                                            onDelete={() => handleDelete(t.id)}
                                             warning={getWeatherWarning(t, forecast)}
                                         />
                                     </React.Fragment>
