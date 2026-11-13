@@ -19,7 +19,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { RootStackParamList, TabParamList } from '../types/navigation';
 
 import { useTheme } from '../theme/ThemeProvider';
-import { fontSize, palette, radius, spacing } from '../theme/tokens';
+import { fontSize, palette, radius, spacing, TASK_COLORS } from '../theme/tokens';
 
 import { useTaskStore } from '../store/useTaskStore';
 import { useWeatherStore } from '../store/useWeatherStore';
@@ -29,16 +29,17 @@ import AgendaItem from '../components/task/AgendaItem';
 import WeekStrip, { WEEK_STRIP_HEIGHT } from '../components/task/WeekStrip';
 import IconSegmentedControl, { type SegmentOption } from '../components/common/IconSegmentedControl';
 import SearchBar from '../components/task/SearchBar';
-import StatusFilter from '../components/task/StatusFilter';
 import EmptyState from '../components/common/EmptyState';
 import StatusBanner from '../components/common/StatusBanner';
 import { TAB_BAR_CLEARANCE } from '../components/common/FloatingTabBar';
+import FilterChips, { type ListFilter } from '../components/task/FilterChips';
 
-import { groupByDate, sortByDateTime, sortByStart } from '../utils/taskSelectors';
+import { groupByDate, sortByDateTime } from '../utils/taskSelectors';
 import { filterTasks, type StatusFilter as Status } from '../utils/taskFilters';
 import { formatDate, monthNames, monthStartOf, toDateString } from '../utils/date';
 import { useDebounce } from '../utils/useDebounce';
 import { getWeatherWarning } from '../utils/weatherWarning';
+import { sortTasks, getTimeMode } from '../utils/taskOrder';
 
 type CalendarProps = React.ComponentProps<typeof CalendarList>;
 type ViewMode = 'list' | 'calendar';
@@ -70,7 +71,10 @@ export default function TaskListScreen() {
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [query, setQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<Status>('all');
+    const [listFilter, setListFilter] = useState<ListFilter>('all');
+    const [filterOpen, setFilterOpen] = useState(false);
+    const byPriority = listFilter === 'priority';
+    const statusFilter: Status = byPriority ? 'all' : listFilter;
     const searching = searchOpen && query.trim().length > 0;
 
     const debouncedQuery = useDebounce(query, 200);
@@ -135,14 +139,18 @@ export default function TaskListScreen() {
     const dotsByDate = useMemo(() => {
         const map: Record<string, string[]> = {};
         Object.entries(tasksByDate).forEach(([date, list]) => {
-            const priorities = Array.from(new Set(list.map(t => t.priority))).slice(0, 3);
-            map[date] = priorities.map(p =>
-                p === 'high'
-                    ? colors.priorityHigh
-                    : p === 'medium'
-                        ? colors.priorityMedium
-                        : colors.priorityLow,
+            const dotColors = list.map(t =>
+                t.color
+                    ? TASK_COLORS[t.color]
+                    : t.priority === 'high'
+                        ? colors.priorityHigh
+                        : t.priority === 'medium'
+                            ? colors.priorityMedium
+                            : t.priority === 'low'
+                                ? colors.priorityLow
+                                : colors.textMuted,
             );
+            map[date] = Array.from(new Set(dotColors)).slice(0, 3);
         });
         return map;
     }, [tasksByDate, colors]);
@@ -173,8 +181,8 @@ export default function TaskListScreen() {
     );
 
     const dayTasks = useMemo(
-        () => sortByStart(tasksByDate[selected] ?? []),
-        [tasksByDate, selected],
+        () => sortTasks(tasksByDate[selected] ?? [], byPriority),
+        [tasksByDate, selected, byPriority],
     );
     const doneCount = dayTasks.filter(t => t.done).length;
 
@@ -231,7 +239,7 @@ export default function TaskListScreen() {
                 title={statusFilter === 'done' ? 'No completed tasks' : 'No active tasks'}
                 message="Try a different filter."
                 actionLabel="Show all"
-                onAction={() => setStatusFilter('all')}
+                onAction={() => setListFilter('all')}
             />
         );
     };
@@ -308,7 +316,24 @@ export default function TaskListScreen() {
                 initialDate={selected}
                 title={title}
                 subtitle={subtitle}
-                style={styles.note}>
+                style={styles.note}
+                headerRight={
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Filter tasks"
+                        hitSlop={8}
+                        onPress={() => setFilterOpen(o => !o)}
+                        style={[
+                            styles.filterButton,
+                            { backgroundColor: listFilter !== 'all' ? colors.text : colors.surfaceAlt },
+                        ]}>
+                        <Ionicons
+                            name="options-outline"
+                            size={18}
+                            color={listFilter !== 'all' ? palette.raelynn : colors.text}
+                        />
+                    </Pressable>
+                }>
                 {error ? (
                     <StatusBanner title={error} actionLabel="OK" onAction={clearError} />
                 ) : null}
@@ -316,7 +341,7 @@ export default function TaskListScreen() {
                     <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
                 ) : (
                     <>
-                        <StatusFilter value={statusFilter} onChange={setStatusFilter} />
+                        {filterOpen ? <FilterChips value={listFilter} onChange={setListFilter} /> : null}
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
@@ -339,6 +364,7 @@ export default function TaskListScreen() {
                                             onPress={() => navigation.navigate('TaskDetail', { taskId: t.id })}
                                             onDelete={() => handleDelete(t.id)}
                                             warning={getWeatherWarning(t, forecast)}
+                                            timeMode={getTimeMode(visible, i, { searching, byPriority })}
                                         />
                                     </React.Fragment>
                                 ))}
@@ -363,6 +389,13 @@ const styles = StyleSheet.create({
     iconButton: {
         width: 44,
         height: 44,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    filterButton: {
+        width: 32,
+        height: 32,
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',

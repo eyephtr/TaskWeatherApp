@@ -6,8 +6,8 @@ import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeabl
 import type { Task } from '../../types/task';
 
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontSize, radius, spacing } from '../../theme/tokens';
-import { PRIORITY_COLOR } from '../../theme/priority';
+import { palette, fontSize, radius, spacing, TASK_COLORS } from '../../theme/tokens';
+import { PRIORITY_COLOR, PRIORITY_LABEL, FLAG_COLOR } from '../../theme/priority';
 
 import Check from './Check';
 
@@ -24,6 +24,7 @@ interface Props {
     onToggleSubtask: (subtaskId: string) => void;
     onDelete: () => void;
     onPress: () => void;
+    timeMode?: 'show' | 'blank' | 'hide';
 }
 
 function SwipeAction({
@@ -59,6 +60,7 @@ export default function AgendaItem({
     onToggleSubtask,
     onDelete,
     onPress,
+    timeMode = 'show',
 }: Props) {
     const { colors } = useTheme();
     const time = task.start.replace(/^0/, ''); // 07:00 -> 7:00
@@ -68,7 +70,9 @@ export default function AgendaItem({
 
     return (
         <View style={styles.row}>
-            <Text style={[styles.time, { color: colors.textMuted }]}>{time}</Text>
+            {timeMode !== 'hide' ? (
+                <Text style={[styles.time, { color: colors.textMuted }]}>{timeMode === 'show' ? time : ''}</Text>
+            ) : null}
 
             <ReanimatedSwipeable
                 containerStyle={styles.swipe}
@@ -116,17 +120,36 @@ export default function AgendaItem({
                         }
                     }}
                     onPress={onPress}
-                    style={[styles.card, { backgroundColor: PRIORITY_COLOR[task.priority] }]}>
+                    style={[
+                        styles.card,
+                        {
+                            backgroundColor: task.color
+                                ? TASK_COLORS[task.color]
+                                : task.priority !== 'none'
+                                    ? PRIORITY_COLOR[task.priority]
+                                    : palette.subtlePurple,
+                        },
+                    ]}>
                     <View style={styles.top}>
-                        <Text
-                            numberOfLines={2}
-                            style={[
-                                styles.title,
-                                { color: colors.agendaInk },
-                                done && [styles.strike, { color: colors.agendaInkMuted }],
-                            ]}>
-                            {task.title}
-                        </Text>
+                        <View style={styles.titleWrap}>
+                            <Text
+                                numberOfLines={2}
+                                style={[
+                                    styles.title,
+                                    { color: colors.agendaInk },
+                                    done && [styles.strike, { color: colors.agendaInkMuted }],
+                                ]}>
+                                {task.title}
+                            </Text>
+                            {task.priority !== 'none' ? (
+                                <Ionicons
+                                    name="flag"
+                                    size={16}
+                                    color={FLAG_COLOR[task.priority]}
+                                    accessibilityLabel={`${PRIORITY_LABEL[task.priority]} priority`}
+                                />
+                            ) : null}
+                        </View>
                         <View style={[styles.chip, { backgroundColor: chipBg }]}>
                             <Text style={[styles.chipText, { color: colors.agendaInkMuted }]}>{task.tag}</Text>
                         </View>
@@ -183,7 +206,7 @@ const styles = StyleSheet.create({
         gap: spacing.xs,
     },
     top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    title: { flex: 1, fontSize: fontSize.body, fontWeight: '700' },
+    title: { flexShrink: 1, fontSize: fontSize.body, fontWeight: '700' },
     chip: {
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -192,6 +215,7 @@ const styles = StyleSheet.create({
     chipText: { fontSize: fontSize.caption },
     strike: { textDecorationLine: 'line-through' },
     range: { fontSize: fontSize.caption + 1 },
+    titleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     subtask: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
     subtaskText: { flex: 1, fontSize: fontSize.body - 2 },
     overdue: { flexDirection: 'row', alignItems: 'center', gap: 4 },
