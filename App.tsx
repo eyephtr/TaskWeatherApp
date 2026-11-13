@@ -10,7 +10,6 @@ import {
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 import { useTaskStore } from './src/store/useTaskStore';
-import { seedDemoTasks } from './src/mock/seedDemo';
 import AppErrorBoundary from './src/components/common/AppErrorBoundary';
 import { useWeatherStore } from './src/store/useWeatherStore';
 
@@ -30,17 +29,10 @@ function AppInner() {
   };
 
   useEffect(() => {
-    useTaskStore
-        .getState()
-        .hydrate()
-        .then(() => {
-            if (__DEV__ && useTaskStore.getState().tasks.length === 0) {
-                seedDemoTasks();
-            }
-        });
+    useTaskStore.getState().hydrate();
 
     useWeatherStore.getState().load();
-}, []);
+  }, []);
 
   return (
     <>
