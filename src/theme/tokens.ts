@@ -12,6 +12,15 @@ export const palette = {
 
     mutedOffWhite: '#FBF6EC',
     armyBrown: '#5A4030',
+
+    purple: '#C9B8E8',
+    indigo: '#AEB6E8',
+    blue: '#A9CDEF',
+    green: '#B5D6B2',
+    yellow: '#F9E08B',
+    orange: '#FFC999',
+    red: '#F0A29A',
+    pink: '#F7C1D4',
 } as const;
 
 export interface ThemeColors {
@@ -35,6 +44,7 @@ export interface ThemeColors {
     priorityMedium: string;
     priorityLow: string;
     ring: string;
+    field: string;
     agendaInk: string;
     agendaInkMuted: string;
     agendaOverdue: string;
@@ -61,6 +71,7 @@ export const lightColors: ThemeColors = {
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
     ring: palette.bistre,
+    field: palette.linenCream,
     agendaInk: '#3D2B1F',
     agendaInkMuted: '#7A6657',
     agendaOverdue: '#B5402B',
@@ -87,6 +98,7 @@ export const darkColors: ThemeColors = {
     priorityMedium: palette.raelynn,
     priorityLow: palette.laurelGreen,
     ring: palette.raelynn,
+    field: '#4D392C',
     agendaInk: '#D4B8A8',
     agendaInkMuted: '#C4A090',
     agendaOverdue: '#E07060',
@@ -95,3 +107,18 @@ export const darkColors: ThemeColors = {
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
 export const radius = { sm: 8, md: 12, lg: 20, pill: 999 } as const;
 export const fontSize = { caption: 12, body: 16, title: 22, display: 32 } as const;
+
+export const TASK_COLORS = {
+    purple: palette.purple,
+    indigo: palette.indigo,
+    blue: palette.blue,
+    green: palette.green,
+    yellow: palette.yellow,
+    orange: palette.orange,
+    red: palette.red,
+    pink: palette.pink,
+} as const;
+
+export type TaskColorKey = keyof typeof TASK_COLORS;
+export const TASK_COLOR_KEYS = Object.keys(TASK_COLORS) as TaskColorKey[];
+export const DEFAULT_TASK_COLOR: TaskColorKey = 'purple';

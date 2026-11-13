@@ -165,6 +165,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
             end: task.end,
             tag: task.tag,
             priority: task.priority,
+            color: task.color,
             outdoor: task.outdoor,
             subtasks,
         });

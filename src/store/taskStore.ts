@@ -38,6 +38,7 @@ function buildTask(
         end: input.end || undefined,
         tag: input.tag?.trim() || prev?.tag || DEFAULT_TAG,
         priority: input.priority,
+        color: input.color ?? prev?.color,
         done: input.done ?? prev?.done ?? false,
         outdoor: input.outdoor ?? prev?.outdoor ?? false,
         subtasks: input.subtasks

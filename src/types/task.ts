@@ -1,4 +1,6 @@
-export type Priority = 'high' | 'medium' | 'low';
+import type { TaskColorKey } from '../theme/tokens';
+
+export type Priority = 'none' | 'high' | 'medium' | 'low';
 
 export interface Subtask {
     id: string;
@@ -9,11 +11,12 @@ export interface Subtask {
 export interface Task {
     id: string;
     title: string;
-    date: string; 
-    start: string; 
-    end?: string; 
+    date: string;
+    start: string;
+    end?: string;
     tag: string;
     priority: Priority;
+    color?: TaskColorKey;
     done: boolean;
     outdoor: boolean;
     subtasks: Subtask[];
@@ -34,6 +37,7 @@ export interface TaskInput {
     end?: string;
     tag?: string;
     priority: Priority;
+    color?: TaskColorKey;
     outdoor?: boolean;
     done?: boolean;
     subtasks?: SubtaskInput[];
